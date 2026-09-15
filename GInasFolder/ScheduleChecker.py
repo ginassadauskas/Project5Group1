@@ -1,0 +1,179 @@
+
+# %%
+
+# the hashtag and percentage side make it a jupyter notebook cell
+# that still a .py file just easier to see output 
+
+################ - Imports
+
+import pandas as pd 
+
+##################
+
+tt = pd.read_excel('Timetable.xlsx')
+Dist_matrix = pd.read_excel('DistanceMatrix.xlsx')
+Bus_Plan = pd.read_excel('Bus Planning.xlsx')
+
+#  TODO might have to be changed to input from site or something here 
+
+# order is important here for these functions to work properly
+
+def convert_time_to_minutes(time_column: pd.Series):
+    '''
+    Converts a column of time strings in HH:MM:SS format to minutes
+
+    Parameters:
+    ---------
+    time_column : pd.Series
+        A pandas Series containing time strings in HH:MM:SS format.
+
+    Returns:
+    ---------
+    minutes : pd.Series
+        Minutes since midnight for each time in the input column. 
+    '''
+
+    temp = pd.to_datetime(time_column, format='%H:%M:%S')
+    minutes = temp.dt.hour * 60 + temp.dt.minute
+    return minutes
+
+def adjust_for_midnight(time_column: pd.Series, threshold: int = 180):
+
+    '''
+        Converts a column of time in minutes in int format to minutes since midnight, adjusting for times that cross midnight.
+
+        Parameters:
+        ---------
+        time_column : pd.Series
+            A pandas Series containing time int int format
+        threshold : int
+            The threshold in minutes to determine if a time is considered to be on the next day (default is 300 minutes).
+
+        Returns:
+        ---------
+        pd.Series
+            Adjusted minute values
+    '''
+
+    return time_column.where(time_column >= threshold, time_column + 1440)
+
+
+Bus_Plan['start time'] = convert_time_to_minutes(Bus_Plan['start time'])
+Bus_Plan['end time'] = convert_time_to_minutes(Bus_Plan['end time'])
+Bus_Plan['start time'] = adjust_for_midnight(Bus_Plan['start time'])
+Bus_Plan['end time'] = adjust_for_midnight(Bus_Plan['end time'])
+
+## quick time conversions 
+
+def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in the marked section 
+
+    '''
+    Checks for overlapping idle times for buses at the same location in the bus plan.
+
+    Parameters:
+    ---------
+    bus_plan : pd.DataFrame
+        A pandas DataFrame containing the bus plan with columns for 'activity', 'start location', 'start time', 'end time', and 'bus'.
+
+    Returns:
+    ---------
+    overlap_dict : dict
+        A dict containing information about overlapping idle times, including the location, bus identifiers, and their respective start and end times.
+    '''
+
+    # filter buses by ones that are actually idle 
+    # + filter out garage buses (ehvgar) since they PROBABLY have enough space to fit enough
+    filtered =  bus_plan[(bus_plan['activity'] == 'idle') & (bus_plan['start location'] != 'ehvgar')]
+
+    grouped = filtered.groupby(['start location'])
+    # gives table of rows that share the same start location
+    # groupby gives a tuple so it's a key and then the actual value (in this case start location)
+    # this means that the key is the value of the group inside a dataframe (garage, station, etc.)
+
+    overlap_dict = []  # make a list of possible overlaps 
+
+    for location, group_df in grouped:
+        rows = group_df.to_dict('records')  # turns the group into a plain list of dicts, one per row
+
+        for i in range(len(rows)):
+            for j in range(i + 1, len(rows)):
+                row_a = rows[i]
+                row_b = rows[j]
+
+                # Generate unique pairs that are not the same bus (OR5 material WOW)
+                
+                if row_a['bus'] == row_b['bus']:
+                    continue # don't compare the same bus just in case 
+
+                if(row_a['start time'] < row_b['end time'] and row_b['start time'] < row_a['end time']):
+                    #######
+                    # TODO WARNING HERE OR SOMETHING
+                    print(f'Overlap at {location} at minutes {row_a['start time']} - {row_a['end time']} (BUS {row_a["bus"]}) and {row_b['start time']} - {row_b['end time']} (BUS {row_b["bus"]})')
+                    #######
+                    overlap_dict.append({
+                    'location': location,
+                    'bus_a': row_a['bus'],
+                    'bus_b': row_b['bus'],
+                    'start_a': row_a['start time'],
+                    'end_a': row_a['end time'],
+                    'start_b': row_b['start time'],
+                    'end_b': row_b['end time'],
+})
+
+    return overlap_dict
+
+def check_gaps(bus_plan: pd.DataFrame):
+    '''
+    Checks for gaps in the bus plan where a bus has a gap/overlap between its end time and the next start time.
+
+    Parameters:
+    ---------
+    bus_plan : pd.DataFrame
+        A pandas DataFrame containing the bus plan with columns for at least 'start time', 'end time', and 'bus'.
+
+    Returns:
+    ---------
+    gap_data : list
+        A list of dictionaries containing information about gaps or overlaps for each bus, including the bus identifier, gap time, previous end time, and current start time.
+    '''
+
+    gap_data = []  # store rows with data for warning or error 
+
+    for bus in bus_plan['bus'].unique(): # for every unique bus number
+        sorted_plan = bus_plan[bus_plan['bus'] == bus].sort_values(by='start time')
+        # sort by start time 
+
+        for i in range(1, len(sorted_plan)):
+            prev_row = sorted_plan.iloc[i - 1]
+            curr_row = sorted_plan.iloc[i]
+            gap = curr_row['start time'] - prev_row['end time']
+
+            if gap != 0:  # if there is a gap (positive or negative)
+
+                gap_data.append({ # write a dict of the data that has a positive or negative time gap
+                    'bus': bus,
+                    'gap_time': gap, # positive if there is a genuine gap, negative if overlap
+                    'prev_end_time': prev_row['end time'],
+                    'curr_start_time': curr_row['start time'],
+                    # CAN technically modify this so you can input what data you want from warnings 
+                    # or errors and then it will just output that data in a list of dicts for you to use however you want
+                })
+    return gap_data
+
+check_for_overlaps(Bus_Plan)
+
+
+
+
+
+
+# %%
+
+def verify_schedule(tt, dist_matrix, bus_plan):
+    '''
+    Verifies the schedule based on the provided timetable, distance matrix, and bus plan.
+    Writes errors or warnings and points to location if issues are found.
+    '''
+
+
+    return True 
