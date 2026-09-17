@@ -57,13 +57,26 @@ def adjust_for_midnight(time_column: pd.Series, threshold: int = 180):
 
     return time_column.where(time_column >= threshold, time_column + 1440)
 
+def adjust_time(bus_plan: pd.DataFrame):
+    '''
+    Adjusts the 'start time' and 'end time' columns of a bus plan to be in minutes since midnight, accounting for times that cross midnight.
 
-Bus_Plan['start time'] = convert_time_to_minutes(Bus_Plan['start time'])
-Bus_Plan['end time'] = convert_time_to_minutes(Bus_Plan['end time'])
-Bus_Plan['start time'] = adjust_for_midnight(Bus_Plan['start time'])
-Bus_Plan['end time'] = adjust_for_midnight(Bus_Plan['end time'])
+    Parameters:
+    ---------
+    bus_plan : pd.DataFrame
+        A pandas DataFrame containing the bus plan with columns for 'start time' and 'end time'.
 
-## quick time conversions 
+    Returns:
+    ---------
+    pd.DataFrame
+        The bus plan DataFrame with adjusted 'start time' and 'end time' columns expressed in minutes since midnight.
+    '''
+    Bus_Plan['start time'] = convert_time_to_minutes(Bus_Plan['start time'])
+    Bus_Plan['end time'] = convert_time_to_minutes(Bus_Plan['end time'])
+    Bus_Plan['start time'] = adjust_for_midnight(Bus_Plan['start time'])
+    Bus_Plan['end time'] = adjust_for_midnight(Bus_Plan['end time'])
+
+    return bus_plan
 
 def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in the marked section 
 
@@ -283,15 +296,31 @@ def check_line_value(bus_plan: pd.DataFrame):
         # I don't filter by service trip 
         return line_issues
 
+def check_positive_negative_consumption(bus_plan: pd.DataFrame):
+    '''
 
-# NOTES:
-# in most functions I keep sorting just in case (and to make it more generic) but it might be smart to write a function to sort them beforehand
-# however the sorting is per bus so I think that will break some stuff, if we care about compute time and simplicity might have to think about making maybe a 
-# some sort of object type that stores timetable per bus 
+    '''
+    consumption_issues = []
+
+    for row in range(len(bus_plan)):
+        if bus_plan.iloc[row]['consumption'] < 0 and bus_plan.iloc[row]['activity'] == 'charging':
+            consumption_issues.append({
+                'bus': bus_plan.iloc[row]['bus'],
+                'start time': bus_plan.iloc[row]['start time'],
+                'consumption': bus_plan.iloc[row]['consumption']
+            })
+
+        elif bus_plan.iloc[row]['consumption'] > 0 and bus_plan.iloc[row]['activity'] != 'charging':
+            consumption_issues.append({
+                'bus': bus_plan.iloc[row]['bus'],
+                'start time': bus_plan.iloc[row]['start time'],
+                'consumption': bus_plan.iloc[row]['consumption']
+            })
+
+        return consumption_issues
 
 
 # %%
-
 
 # don't care about this rn 
 def verify_schedule(tt, dist_matrix, bus_plan):
@@ -302,3 +331,6 @@ def verify_schedule(tt, dist_matrix, bus_plan):
 
 
     return True 
+
+# %%
+
