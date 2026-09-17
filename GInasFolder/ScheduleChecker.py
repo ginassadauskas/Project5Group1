@@ -57,8 +57,7 @@ def adjust_for_midnight(time_column: pd.Series, threshold: int = 180):
     return time_column.where(time_column >= threshold, time_column + 1440)
 
 def adjust_time(bus_plan: pd.DataFrame):
-    '''
-    Adjusts the 'start time' and 'end time' columns of a bus plan to be in minutes since midnight, accounting for times that cross midnight.
+    '''Adjusts the 'start time' and 'end time' columns of a bus plan to be in minutes since midnight, accounting for times that cross midnight.
 
     Parameters:
     ---------
@@ -70,10 +69,10 @@ def adjust_time(bus_plan: pd.DataFrame):
     pd.DataFrame
         The bus plan DataFrame with adjusted 'start time' and 'end time' columns expressed in minutes since midnight.
     '''
-    Bus_Plan['start time'] = convert_time_to_minutes(Bus_Plan['start time'])
-    Bus_Plan['end time'] = convert_time_to_minutes(Bus_Plan['end time'])
-    Bus_Plan['start time'] = adjust_for_midnight(Bus_Plan['start time'])
-    Bus_Plan['end time'] = adjust_for_midnight(Bus_Plan['end time'])
+    bus_plan['start time'] = convert_time_to_minutes(bus_plan['start time'])
+    bus_plan['end time'] = convert_time_to_minutes(bus_plan['end time'])
+    bus_plan['start time'] = adjust_for_midnight(bus_plan['start time'])
+    bus_plan['end time'] = adjust_for_midnight(bus_plan['end time'])
 
     return bus_plan
 

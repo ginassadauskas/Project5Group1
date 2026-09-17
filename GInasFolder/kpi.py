@@ -23,16 +23,37 @@ def minimum_bus(time_table: pd.DataFrame) -> int:
 
     [time_table] The timetable with each required line, time and starting location.
     [returns] The minimum number of buses required.
-    """ 
+    """
 
     return None
 
-def minute_ratio(schedule: pd.DataFrame, in_minutes: bool=False) -> float:
-    """Calculates how much time was spend on non-serive trips
+def trip_time(schedule: pd.DataFrame, in_minutes: bool=False) -> pd.DataFrame:
+    """Calculates how much time was spend on each trip
 
     [schedule] a completed bus schedule.
-    [in_minues] Default False. If true, all times are represented as minutes.
-    [returns] a ratio of total time to time spend on non-service trips
+    [in_minues] Default False. If true, all times are represented as minutes instead of hours.
+    [returns] a copy of the schudule with the times of each trip appended as a column
     """
+    schedule = schedule.copy()
     if in_minutes is False:
-        schedule['start time'] = sc.
+        schedule = sc.adjust_time(schedule)
+
+    schedule['trip duration'] = schedule['end time'] - schedule['start time']
+    return schedule
+
+def trip_ratio(schedule: pd.DataFrame, trip_duration: bool | None=None) -> float:
+    """Calculates the ratio of service and non-service trips.
+
+    [schedule] The bus schedule, with or without the trip times in minutes.
+    [trip time] Default None. 
+        If true, the trip duration column has not been made and times are in minutes.
+        If false, the the trip duration column has not been made and times are in hh:mm
+        If None, the trip duration column has already been calculated
+    """
+    schedule = schedule.copy()
+
+    if trip_duration is not None:
+        schedule = trip_time(schedule, trip_duration)
+
+    all_times = schedule.groupby('activity').sum()['trip duration']
+    return float(1 - (all_times.sum() - all_times['service trip'])/all_times.sum())
