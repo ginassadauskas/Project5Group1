@@ -290,11 +290,10 @@ def check_line_value(bus_plan: pd.DataFrame):
 # some sort of object type that stores timetable per bus 
 
 
-
-
-
 # %%
 
+
+# don't care about this rn 
 def verify_schedule(tt, dist_matrix, bus_plan):
     '''
     Verifies the schedule based on the provided timetable, distance matrix, and bus plan.
