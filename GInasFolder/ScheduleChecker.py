@@ -1,5 +1,5 @@
 
-# %%
+# %% 
 
 # the hashtag and percentage side make it a jupyter notebook cell
 # that still a .py file just easier to see output 
@@ -317,7 +317,30 @@ def check_positive_negative_consumption(bus_plan: pd.DataFrame):
                 'consumption': bus_plan.iloc[row]['consumption']
             })
 
-        return consumption_issues
+    return consumption_issues
+
+def calculate_energy_levels(capacity:int, safety_margin:float, bus_plan:pd.DataFrame, SOH: tuple=(0.85,0.95)):
+
+    safety_margin = capacity*min(SOH)*safety_margin
+
+    max_charge = capacity*min(SOH)
+
+    battery_level_errors = []
+
+    bus_plan['cum_consumption'] = bus_plan.groupby('bus')['energy consumption'].cumsum()
+    bus_plan['energy_level'] = max_charge - bus_plan['cum_consumption']
+
+    for row in range(len(bus_plan)):
+        if bus_plan.iloc[row]['energy_level'] < safety_margin:
+            battery_level_errors.append({
+                'bus': bus_plan.iloc[row]['bus'],
+                'start time': bus_plan.iloc[row]['start time'],
+                'energy_level': bus_plan.iloc[row]['energy_level']
+            })
+
+    return battery_level_errors
+
+calculate_energy_levels(capacity= 300, safety_margin= 0.1, bus_plan=Bus_Plan)
 
 
 # %%
@@ -333,4 +356,5 @@ def verify_schedule(tt, dist_matrix, bus_plan):
     return True 
 
 # %%
+
 
