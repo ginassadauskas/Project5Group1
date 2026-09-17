@@ -9,7 +9,6 @@
 import pandas as pd 
 
 ##################
-
 tt = pd.read_excel('Timetable.xlsx')
 Dist_matrix = pd.read_excel('DistanceMatrix.xlsx')
 Bus_Plan = pd.read_excel('Bus Planning.xlsx')
