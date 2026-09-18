@@ -5,7 +5,8 @@ import ScheduleChecker as sc
 
 SOH = (0.85, 0.95)
 
-def calculate_kpi(schedule: pd.DataFrame, bus: int=1, time: int=1, battery: int=1) -> float:
+def calculate_kpi(schedule: pd.DataFrame, time_table: pd.DataFrame, 
+                  time_table2: pd.DataFrame | None=None, bus: int=1, time: int=1) -> float:
     """Calculates the KPI of a given schedule.
 
     [schedule] A completed, verified schedule the KPI will score.
@@ -13,9 +14,15 @@ def calculate_kpi(schedule: pd.DataFrame, bus: int=1, time: int=1, battery: int=
     [time] The importance of how much time each bus spends on non-service trips
     [battery] The importance of the battery degridation. The reduction of maximum battery capacity
 
-    [returns] The kpi, ranging between 0 and 3. 3 is perfect.
+    [returns] The kpi, ranging between 0 and 1.
     """
-    return None
+    #if time_table2 is not None:
+    #    time_table == merge_timedistance(time_table, time_table2)
+
+    min_bus_score = bus*minimum_bus(time_table)
+    trip_time_score = time*trip_time(schedule)
+
+    return (min_bus_score+trip_time_score) / (bus+time)
 
 
 def minimum_bus(time_table: pd.DataFrame) -> int:
@@ -24,8 +31,7 @@ def minimum_bus(time_table: pd.DataFrame) -> int:
     [time_table] The timetable with each required line, time and starting location.
     [returns] The minimum number of buses required.
     """
-
-    return None
+    print(time_table)
 
 def trip_time(schedule: pd.DataFrame, in_minutes: bool=False) -> pd.DataFrame:
     """Calculates how much time was spend on each trip
@@ -57,3 +63,11 @@ def trip_ratio(schedule: pd.DataFrame, trip_duration: bool | None=None) -> float
 
     all_times = schedule.groupby('activity').sum()['trip duration']
     return float(1 - (all_times.sum() - all_times['service trip'])/all_times.sum())
+
+def calculate_batterydegridation():
+    """Calculates the average battery degridation of the busses.
+
+    Unused. Advanced battery has not been implemented and battery degridation cannot be calculated.
+    [returns] 1  
+    """
+    return 1
