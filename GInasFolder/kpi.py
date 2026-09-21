@@ -20,7 +20,7 @@ def calculate_kpi(schedule: pd.DataFrame, time_table: pd.DataFrame,
     #    time_table == merge_timedistance(time_table, time_table2)
 
     min_bus_score = bus*minimum_bus(time_table)
-    trip_time_score = time*trip_time(schedule)
+    trip_time_score = time*trip_ratio(schedule)
 
     return (min_bus_score+trip_time_score) / (bus+time)
 
