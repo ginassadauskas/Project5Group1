@@ -3,10 +3,9 @@
 import pandas as pd
 import ScheduleChecker as sc
 
-SOH = (0.85, 0.95)
-
-def calculate_kpi(schedule: pd.DataFrame, time_table: pd.DataFrame, 
-                  time_table2: pd.DataFrame | None=None, bus: int=1, time: int=1) -> float:
+def calculate_kpi(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, 
+                  distance_matrix: pd.DataFrame, bus: int=1, time: int=1,
+                  in_minutes: bool | None=False) -> float:
     """Calculates the KPI of a given schedule.
 
     [schedule] A completed, verified schedule the KPI will score.
@@ -19,19 +18,11 @@ def calculate_kpi(schedule: pd.DataFrame, time_table: pd.DataFrame,
     #if time_table2 is not None:
     #    time_table == merge_timedistance(time_table, time_table2)
 
-    min_bus_score = bus*minimum_bus(time_table)
-    trip_time_score = time*trip_ratio(schedule)
+    min_bus_score = bus*bus_ratio(schedule, req_bus_line, distance_matrix)
+    trip_time_score = time*trip_ratio(schedule, trip_duration=in_minutes)
+    battery = 1 #Currently, we can't calculate the battery degridation
 
     return (min_bus_score+trip_time_score) / (bus+time)
-
-
-def minimum_bus(time_table: pd.DataFrame) -> int:
-    """Calculates the minimum number of buses for a valid schedule.
-
-    [time_table] The timetable with each required line, time and starting location.
-    [returns] The minimum number of buses required.
-    """
-    print(time_table)
 
 def trip_time(schedule: pd.DataFrame, in_minutes: bool=False) -> pd.DataFrame:
     """Calculates how much time was spend on each trip
@@ -73,7 +64,12 @@ def calculate_batterydegridation():
     return 1
 
 def merge_route_plan(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> pd.DataFrame:
-    """Merges the excel bus lines and the distance/time it takes to run over those lines.
+    """Merges the excel lines that need to be run and the distance file of those lines.
+
+    [req_bus_line] a dataframe containing each bus line that is run through the day.
+    [distance_matrix] a dataframe containing the distance and length of each trip.
+
+    [returns] the merged file.
     """
     timetable = req_bus_line.copy()
     distance = distance_matrix.copy()
@@ -94,7 +90,13 @@ def merge_route_plan(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) 
 
     return timetable
 
-def min_b_helper(merged_data):
+def min_b_helper(merged_data: pd.DataFrame) -> pd.DataFrame:
+    """Adds a few important columns to the merged dataframe for processing of the bus calculations.
+
+    [input] The output of merge_route_plan()
+    
+    [returns] A new dataframe with arrival time added.
+    """
     merged_data = merged_data.copy()
     merged_data['departure_time'] = sc.convert_time_to_minutes(merged_data['departure_time'])
     merged_data['departure_time'] = sc.adjust_for_midnight(merged_data['departure_time'])
@@ -103,7 +105,13 @@ def min_b_helper(merged_data):
 
     return merged_data
 
-def bus_sweep(data):
+def bus_sweep(data: pd.DataFrame) -> int:
+        """Using a modified Sweep Search algorithm, find the minimum buses required.
+
+        [data] The result from min_b_helper()
+
+        [returns] The minimum number of busses required to run the given schedule.
+        """
         max = 0
         for i in range(len(data)):
                 bus_req = len(data.loc[
@@ -120,7 +128,35 @@ def bus_sweep(data):
                         max = bus_req
 
         return max+1
-#AI suggested sweep search, but provided no code.
+#Bus sweep is based on a sweep search algorithm. AI suggested to use Sweep Search.
 
-def minimum_buses(req_bus_line, distance_matrix):
-     return bus_sweep(min_b_helper(merge_route_plan(req_bus_line, distance_matrix)))
+def minimum_bus(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> int:
+     """Using a modified Sweep Search algorithm, find the minimum buses required.
+
+     This function combines bus_sweep, min_b_helper, and merge_route_plan.
+     These three functions are meant to be used in succession, and are only used for this function.
+     """
+     return bus_sweep(
+          min_b_helper(
+               merge_route_plan(
+                    req_bus_line, distance_matrix
+          )))
+
+def count_buses(schedule: pd.DataFrame) -> int:
+     """Counts the number of buses used in the given schedule.
+
+     [schedule] The schedule of which the KPI needs to be calculated.
+     [returns] The number of buses used.
+     """
+     return len(schedule['bus'].unique())
+
+def bus_ratio(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> float:
+     """Calculates the ratio between number of buses used and minimum buses required.
+
+    [schedule] The schedule of which the KPI needs to be calculated.
+    [req_bus_line] a dataframe containing each bus line that is run through the day.
+    [distance_matrix] a dataframe containing the distance and length of each trip.
+
+    [return] the ratio, ranging between 0 to 1.
+     """
+     return count_buses(schedule) / minimum_bus(req_bus_line, distance_matrix)
