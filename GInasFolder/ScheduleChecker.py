@@ -637,7 +637,6 @@ def verify_schedule(
         bus_plan['end time'] = adjust_for_midnight(
             bus_plan['end time']
         )
-
         # Checks that return lists
         errors.extend(check_gaps(bus_plan))
         errors.extend(check_start_end_location(bus_plan))
@@ -645,22 +644,16 @@ def verify_schedule(
         errors.extend(check_line_value(bus_plan))
         errors.extend(check_positive_negative_consumption(bus_plan))
         errors.extend(check_for_overlaps(bus_plan))
-
     except BusScheduleError as error:
         # Fatal validation error
         errors.append(error)
-
     except (pd.errors.ParserError, ValueError, TypeError, KeyError) as error:
         # Unexpected problems caused by invalid data
         errors.append(
             BusScheduleError(f"Unexpected validation error: {error}")
         )
-
     if errors:
-        for error in errors:
-            print(error)
-
-        return False
+        return errors
 
     return True
 # %%
