@@ -236,9 +236,6 @@ def check_start_end_location(bus_plan: pd.DataFrame):
             # same idea as previous functions, I already mentioned this is a critical finding
 
             if prev_row['end location'] != curr_row['start location']:
-                print(f"Location mismatch for Bus {bus}: Previous end location '{prev_row['end location']}' does not match current start location '{curr_row['start location']}'.")
-                # delete print statement later and just write to a list of dicts for output to user
-                # dict output looks super ugly for me rn. 
                 location_mismatches.append({
                     'bus': bus,
                     'prev_end_location': prev_row['end location'],
