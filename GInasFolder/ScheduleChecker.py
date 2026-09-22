@@ -9,6 +9,7 @@
 import pandas as pd 
 
 ##################
+
 tt = pd.read_excel('Timetable.xlsx')
 Dist_matrix = pd.read_excel('DistanceMatrix.xlsx')
 Bus_Plan = pd.read_excel('Bus Planning.xlsx')
@@ -424,7 +425,7 @@ def validate_file_type(filename: str):
         raise InvalidFileTypeError(f"'{filename}' is not an excel/csv file. Please insert an excel or csv file.")
 
 # check if there are any missing columns in uploaded file
-def validate_columns(bus_plan: pd.DataFrame, required_columns=REQUIRED_COLUMNS):
+def validate_columns(bus_plan: pd.DataFrame, required_columns=list):
     missing = set(required_columns) - set(bus_plan.columns)
     if missing:
         raise MissingColumnsError(f"Missing columns: {missing}. Please make sure all columns are inserted.")
@@ -504,8 +505,6 @@ def validate_duplicate_schedule(bus_plan: pd.DataFrame):
  
 
 # ERROR CLASSES - Emily
-# 1. These classes have syntax errors
-# 2. The classes have a lot of behaviour. Is that all neccessary?
 
 class BusScheduleError(Exception):
     """Base class for every error this validator can raise."""
@@ -563,6 +562,88 @@ class ScheduleValidationError(BusScheduleError):
         )
         super().__init__(message)
 
+'''
+MAIN FUNCTION TO CALL TO CHECK ALL ERRORS
+parameters are; the bus plan, time table, distance matrix, allowed locations, and allowed activities, and allowed columns
+ai was used to help with inputing the other functions into this one
+-Emily
+'''
 
+def verify_schedule(
+    filename: str,
+    timetable: pd.DataFrame,
+    dist_matrix: pd.DataFrame,
+    bus_plan: pd.DataFrame, ALLOWED_ACTIVITIES: list,ALLOWED_LOCATIONS: list,REQUIRED_COLUMNS: list) -> bool:
+    """
+    Runs all schedule validations.
 
+    Returns
+    -------
+    bool
+        True if the schedule is valid, otherwise False.
+    """
+
+    errors = []
+
+    try:
+        # Fatal input checks
+        validate_file_type(filename)
+        validate_columns(bus_plan)
+
+        # Work on a copy so that validation does not unexpectedly
+        # modify the DataFrame supplied by the caller.
+        bus_plan = bus_plan.copy()
+
+        # Run validations that raise exceptions
+        validate_locations(bus_plan, ALLOWED_LOCATIONS)
+        validate_activities(bus_plan, ALLOWED_ACTIVITIES)
+
+        # Run validations that return lists of errors
+        errors.extend(validate_activity_not_empty(bus_plan))
+        errors.extend(validate_energy_values(bus_plan))
+        errors.extend(validate_idle_energy(bus_plan))
+        errors.extend(validate_line_numbers(bus_plan))
+        errors.extend(validate_duplicate_schedule(bus_plan))
+        errors.extend(validate_same_location(bus_plan))
+
+        # Convert times before running checks that depend on time values
+        bus_plan['start time'] = convert_time_to_minutes(
+            bus_plan['start time']
+        )
+        bus_plan['end time'] = convert_time_to_minutes(
+            bus_plan['end time']
+        )
+
+        bus_plan['start time'] = adjust_for_midnight(
+            bus_plan['start time']
+        )
+        bus_plan['end time'] = adjust_for_midnight(
+            bus_plan['end time']
+        )
+
+        # Checks that return lists
+        errors.extend(check_gaps(bus_plan))
+        errors.extend(check_start_end_location(bus_plan))
+        errors.extend(check_garage(bus_plan))
+        errors.extend(check_line_value(bus_plan))
+        errors.extend(check_positive_negative_consumption(bus_plan))
+        errors.extend(check_for_overlaps(bus_plan))
+
+    except BusScheduleError as error:
+        # Fatal validation error
+        errors.append(error)
+
+    except (pd.errors.ParserError, ValueError, TypeError, KeyError) as error:
+        # Unexpected problems caused by invalid data
+        errors.append(
+            BusScheduleError(f"Unexpected validation error: {error}")
+        )
+
+    if errors:
+        for error in errors:
+            print(error)
+
+        return False
+
+    return True
 # %%
