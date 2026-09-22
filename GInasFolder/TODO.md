@@ -20,6 +20,16 @@ CHECKS:
 
 *~~if at the END of the trip, a bus has less than capacity(300)\*state\_of\_health(0.95)\*min\_SOH(0.1), it is invalid, return end\_location and end\_time as well (wait on Ivan's data)~~*
 
+
+~~Function to write next service trip line for rows that have an empty line.~~
+
+Check for overlaps  should only check for buses that have the same line. 
+
+
+
+
+
+
 AI usage:
 
 in line suggestions were used to formulate doc string text to write it faster
