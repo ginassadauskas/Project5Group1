@@ -382,7 +382,9 @@ def verify_schedule(tt, dist_matrix, bus_plan):
 
 
 # ERROR CLASSES - Emily
-
+# 1. These classes have syntax errors
+# 2. The classes have a lot of behaviour. Is that all neccessary?
+'''
 class BusScheduleError(Exception):
     """Base class for every error this validator can raise."""
 
@@ -395,7 +397,7 @@ class BusScheduleError(Exception):
 
 class InvalidFileTypeError(BusScheduleError):
     """The uploaded file isn't a .csv, .xlsx, or .xls file."""
-    if Bus_Plan.suffix =! ".xlsx":
+    if Bus_Plan.suffix != ".xlsx":
         raise ValueError(f"'{Bus_Plan.name}' is not a excel file. please insert an excel file")
 
 
@@ -425,6 +427,7 @@ class InvalidLocationError(BusScheduleError):
                 # store these invalid locations
                 bad_values = file.loc[~file["status"].isin(allowed), "status"].unique()
                 raise ValueError(f"Unexpected values found: {bad_values}. Are these locations correct?")
+    
 class SameLocationError(BusScheduleError):
     """Start location and end location are identical for a row."""
     start_location = Bus_Plan["start location"]
@@ -510,5 +513,4 @@ class ScheduleValidationError(BusScheduleError):
 
 
 # %%
-
-
+'''
