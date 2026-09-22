@@ -93,3 +93,34 @@ def merge_route_plan(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) 
     ]
 
     return timetable
+
+def min_b_helper(merged_data):
+    merged_data = merged_data.copy()
+    merged_data['departure_time'] = sc.convert_time_to_minutes(merged_data['departure_time'])
+    merged_data['departure_time'] = sc.adjust_for_midnight(merged_data['departure_time'])
+    merged_data = merged_data.sort_values('departure_time').reset_index(drop=True)
+    merged_data['arrival_time'] = merged_data['departure_time'] + merged_data['max_travel_time']
+
+    return merged_data
+
+def bus_sweep(data):
+        max = 0
+        for i in range(len(data)):
+                bus_req = len(data.loc[
+                        (
+                                (data['departure_time'] > data['departure_time'][i]) & 
+                                (data['departure_time'] <= data['arrival_time'][i])
+                        ) |
+                        (
+                                (data['departure_time'] < data['departure_time'][i]) & 
+                                (data['arrival_time'] >= data['departure_time'][i])
+                        )
+                ])
+                if bus_req > max:
+                        max = bus_req
+
+        return max+1
+#AI suggested sweep search, but provided no code.
+
+def minimum_buses(req_bus_line, distance_matrix):
+     return bus_sweep(min_b_helper(merge_route_plan(req_bus_line, distance_matrix)))
