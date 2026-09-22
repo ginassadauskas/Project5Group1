@@ -71,3 +71,25 @@ def calculate_batterydegridation():
     [returns] 1  
     """
     return 1
+
+def merge_route_plan(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> pd.DataFrame:
+    """Merges the excel bus lines and the distance/time it takes to run over those lines.
+    """
+    timetable = req_bus_line.copy()
+    distance = distance_matrix.copy()
+
+    distance = distance[
+        ["start", "end", "line", "distance_m",
+         "min_travel_time", "max_travel_time"]
+    ]
+    timetable = timetable.merge(
+        distance,
+        on=["start", "end", "line"],
+        how="left"
+    )
+    timetable = timetable[
+        ["start", "departure_time", "end", "line",
+        "distance_m", "min_travel_time", "max_travel_time"]
+    ]
+
+    return timetable

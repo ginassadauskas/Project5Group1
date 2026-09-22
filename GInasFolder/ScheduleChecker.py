@@ -17,7 +17,7 @@ Bus_Plan = pd.read_excel('Bus Planning.xlsx')
 
 # order is important here for these functions to work properly
 
-def convert_time_to_minutes(time_column: pd.Series):
+def convert_time_to_minutes(time_column: pd.Series, include_seconds: bool=True):
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
 
@@ -31,8 +31,11 @@ def convert_time_to_minutes(time_column: pd.Series):
     minutes : pd.Series
         Minutes since midnight for each time in the input column. 
     '''
+    try:
+        temp = pd.to_datetime(time_column, format='%H:%M:%S')
+    except:
+        temp = pd.to_datetime(time_column, format='%H:%M')
 
-    temp = pd.to_datetime(time_column, format='%H:%M:%S')
     minutes = temp.dt.hour * 60 + temp.dt.minute
     return minutes
 
