@@ -332,18 +332,18 @@ def check_positive_negative_consumption(bus_plan: pd.DataFrame):
     consumption_issues = []
 
     for row in range(len(bus_plan)):
-        if bus_plan.iloc[row]['consumption'] < 0 and bus_plan.iloc[row]['activity'] == 'charging':
+        if bus_plan.iloc[row]['energy consumption'] < 0 and bus_plan.iloc[row]['activity'] == 'charging':
             consumption_issues.append({
                 'bus': bus_plan.iloc[row]['bus'],
                 'start time': bus_plan.iloc[row]['start time'],
-                'consumption': bus_plan.iloc[row]['consumption']
+                'energy consumption': bus_plan.iloc[row]['energy consumption']
             })
 
-        elif bus_plan.iloc[row]['consumption'] > 0 and bus_plan.iloc[row]['activity'] != 'charging':
+        elif bus_plan.iloc[row]['energy consumption'] > 0 and bus_plan.iloc[row]['activity'] != 'charging':
             consumption_issues.append({
                 'bus': bus_plan.iloc[row]['bus'],
                 'start time': bus_plan.iloc[row]['start time'],
-                'consumption': bus_plan.iloc[row]['consumption']
+                'energy consumption': bus_plan.iloc[row]['energy consumption']
             })
 
     return consumption_issues
@@ -425,10 +425,17 @@ def validate_file_type(filename: str):
         raise InvalidFileTypeError(f"'{filename}' is not an excel/csv file. Please insert an excel or csv file.")
 
 # check if there are any missing columns in uploaded file
-def validate_columns(bus_plan: pd.DataFrame, required_columns=list):
+def validate_columns(
+    bus_plan: pd.DataFrame,
+    required_columns: list
+):
     missing = set(required_columns) - set(bus_plan.columns)
+
     if missing:
-        raise MissingColumnsError(f"Missing columns: {missing}. Please make sure all columns are inserted.")
+        raise MissingColumnsError(
+            f"Missing columns: {missing}. "
+            "Please make sure all columns are inserted."
+        )
     
 # check if there are any invalid locations, uses input as allowed locations.
 def validate_locations(bus_plan: pd.DataFrame, allowed_locations):
@@ -565,7 +572,7 @@ class ScheduleValidationError(BusScheduleError):
 '''
 MAIN FUNCTION TO CALL TO CHECK ALL ERRORS
 parameters are; the bus plan, time table, distance matrix, allowed locations, and allowed activities, and allowed columns
-ai was used to help with inputing the other functions into this one
+ai was used to help with inputing the other functions into this one and debugging syntax errors
 -Emily
 '''
 
@@ -573,7 +580,20 @@ def verify_schedule(
     filename: str,
     timetable: pd.DataFrame,
     dist_matrix: pd.DataFrame,
-    bus_plan: pd.DataFrame, ALLOWED_ACTIVITIES: list,ALLOWED_LOCATIONS: list,REQUIRED_COLUMNS: list) -> bool:
+    bus_plan: pd.DataFrame,
+    ALLOWED_ACTIVITIES: list = ["idle", "service trip", "material trip", "charging"],
+    ALLOWED_LOCATIONS: list = ["ehvbst", "ehvapt", "ehvgar"],
+    REQUIRED_COLUMNS: list = [
+        "start location",
+        "end location",
+        "start time",
+        "end time",
+        "activity",
+        "line",
+        "energy consumption",
+        "bus"
+    ]
+) -> bool:
     """
     Runs all schedule validations.
 
@@ -588,7 +608,7 @@ def verify_schedule(
     try:
         # Fatal input checks
         validate_file_type(filename)
-        validate_columns(bus_plan)
+        validate_columns(bus_plan, REQUIRED_COLUMNS)
 
         # Work on a copy so that validation does not unexpectedly
         # modify the DataFrame supplied by the caller.
