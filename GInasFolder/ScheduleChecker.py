@@ -356,6 +356,135 @@ def verify_schedule(tt, dist_matrix, bus_plan):
 
     return True 
 
+
+# ERROR CLASSES - Emily
+
+class BusScheduleError(Exception):
+    """Base class for every error this validator can raise."""
+
+    def __init__(self, message, row=None):
+        self.row = row
+        if row is not None:
+            message = f"[Row {row}] {message}"
+        super().__init__(message)
+
+
+class InvalidFileTypeError(BusScheduleError):
+    """The uploaded file isn't a .csv, .xlsx, or .xls file."""
+    if Bus_Plan.suffix =! ".xlsx":
+        raise ValueError(f"'{Bus_Plan.name}' is not a excel file. please insert an excel file")
+
+
+class MissingColumnsError(BusScheduleError):
+    """One or more required columns are missing. Uses hard values"""
+    required_columns = ["start location","end location","start time","end time","activity","line","energy consumption","bus"]
+    input_columns = Bus_Plan.columns
+    missing_columns = set(required_columns) - set(input_columns)
+    if missing_columns:
+        raise IndexError(f"Unable to proceed, Missing columns: {missing_columns}, please make sure all columns are inserted")
+
+    else:
+        # now check individual columns for the data errors
+        start_location = Bus_Plan["start location"]
+        end_location = Bus_Plan["end location"]
+        start_time = Bus_Plan["start time"]
+        end_time = Bus_Plan["end time"]
+        activity = Bus_Plan["activity"]
+        line = Bus_Plan["line"]
+        energy_consumption = Bus_Plan["energy consumption"]
+        bus = Bus_Plan["bus"]
+
+class InvalidLocationError(BusScheduleError):
+    """A start/end location isn't in the allowed list."""
+    allowed_locations = input("Please insert the codes of the allowed locations")
+    if not all Bus_Plan['start_location'].isin(allowed_locations).all() and end_location.isin(allowed_locations).all():
+                # store these invalid locations
+                bad_values = file.loc[~file["status"].isin(allowed), "status"].unique()
+                raise ValueError(f"Unexpected values found: {bad_values}. Are these locations correct?")
+class SameLocationError(BusScheduleError):
+    """Start location and end location are identical for a row."""
+    start_location = Bus_Plan["start location"]
+    end_location = Bus_Plan["end location"]
+    for i in start_location:
+        for k in end_location:
+            if start_location == end_location: # check if the start location and end location is the same
+                raise ValueError(f"start and end locations are the same for row # {}, is this correct?")
+
+
+class InvalidActivityError(BusScheduleError):
+    """An activity value isn't one of the allowed activities."""
+    allowed_activities = input("please insert the allowed activities")
+    activity = Bus_Plan["activity"]
+    for i in activity:
+        if not all activity.isin(allowed_activities).all():
+            raise ValueError(f"The activities in row {i} are invalid, the activities allowed are {allowed_activities}")
+
+class EmptyActivityError(BusScheduleError):
+    """The activity field is empty."""
+    activity = Bus_Plan["activity"]
+    for i in activity:
+        if activity.isnull():
+            raise ValueError(f"Warning, row number {i} has an an empty activity")
+
+class InvalidEnergyValueError(BusScheduleError):
+    """Energy consumption isn't a valid number."""
+    energy = Bus_Plan["energy consumption"]
+    for idx, value in energy.items(): # if any values in the column "energy" is not a number
+                is_valid = not pd.isna(pd.to_numeric(value, errors="coerce"))
+                if not is_valid:
+                    raise TypeError(f"Row {idx}: '{value}' is not a number or a decimal")
+
+class InvalidIdleEnergyError(BusScheduleError):
+    """An idle activity doesn't consume exactly 5 energy."""
+    energy = Bus_Plan["energy consumption"]
+    activity = Bus_Plan["activity"]
+    for i in energy:
+        for k in activity:
+            if energy != 5 and activity == "idle":
+                raise ValueError(f"In row # {k}, idle activites must consume 5 energy") #if the activity is idle, the energy must be equal to 5
+
+class InvalidLineNumberError(BusScheduleError):
+    """Line isn't numeric, or has more than 3 digits."""
+    line = Bus_Plan["line"]
+    for idx,value in line.items(): # if any values in the column line is not a number. 
+        is_valid = not pd.isna(pd.to_numeric(value, errors="coerce"))
+        if not is_valid:
+            raise TypeError(f"Row {idx}: '{value}' is not a valid line number. Lines must be empty or have numbers with max 3 digits")
+        elif len(pd.to_numeric(value, errors="coerce")) > 3:
+            raise IndexError(f"Row {idx}: '{value}' is not a valid line number. It has more than 3 digits.")
+
+class DuplicateScheduleError(BusScheduleError):
+    # checks if the same line, same bus, and same start time appear at least twice.
+    def check_duplicate_schedule(bus_plan: pd.DataFrame):
+    
+        duplicate_issues = []
+        subset_cols = ['bus', 'line', 'start time']
+
+   
+        duplicates = bus_plan[bus_plan.duplicated(subset=subset_cols, keep=False)]
+
+        for i in range(len(duplicates)):
+            row = duplicates.iloc[i]
+            duplicate_issues.append({
+                'bus': row['bus'],
+                'line': row['line'],
+                'start time': row['start time'],
+        })
+
+        return ValueError(f"Duplicate bus times and lines were found, {duplicate_issues}, at rows {i}")
+                
+class ScheduleValidationError(BusScheduleError):
+    """Aggregates every row-level error found in one validation pass."""
+
+    def __init__(self, errors):
+        self.errors = errors
+        message = f"{len(errors)} validation error(s) found:\n" + "\n".join(
+            f" - {e}" for e in errors
+        )
+        super().__init__(message)
+
+
+
 # %%
 
 
