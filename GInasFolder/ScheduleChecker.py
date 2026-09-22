@@ -41,6 +41,7 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
 Bus_Plan['line'] = convert_empty_line_to_next(Bus_Plan)
 
 
+
 def convert_time_to_minutes(time_column: pd.Series, include_seconds: bool=True):
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
@@ -160,7 +161,7 @@ def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in th
     # 18 overlaps now with the line thing
     return overlap_dict
 
-
+overlaps = check_for_overlaps(Bus_Plan)
 
 def check_gaps(bus_plan: pd.DataFrame):
     '''
