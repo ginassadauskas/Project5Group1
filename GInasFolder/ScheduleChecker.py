@@ -17,6 +17,30 @@ Bus_Plan = pd.read_excel('Bus Planning.xlsx')
 
 # order is important here for these functions to work properly
 
+def convert_empty_line_to_next(bus_plan: pd.DataFrame):
+    '''
+    Converts empty line values in the bus plan to the next available line value for the same bus.
+
+    Parameters:
+    ---------
+    bus_plan : pd.DataFrame
+        A pandas DataFrame containing the bus plan with columns for at least 'line', 'bus', and 'start time'.
+
+    Returns:
+    ---------
+    bus_plan : pd.Series
+        The bus plan line column with empty line values filled with the next available line value for the same bus.
+    '''
+    bus_plan = bus_plan.sort_values(by=['bus', 'start time'])
+    filled = bus_plan['line'] = bus_plan.groupby('bus')['line'].bfill() 
+    #bfill does exactly the thing I need in a single function
+
+    return filled.fillna(-1)  # fill any remaining NaN values with -1 to indicate no line available
+
+
+Bus_Plan['line'] = convert_empty_line_to_next(Bus_Plan)
+
+
 def convert_time_to_minutes(time_column: pd.Series, include_seconds: bool=True):
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
@@ -119,11 +143,11 @@ def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in th
                 if row_a['bus'] == row_b['bus']:
                     continue # don't compare the same bus just in case 
 
-                if(row_a['start time'] < row_b['end time'] and row_b['start time'] < row_a['end time']):
-                    #######
-                    # TODO WARNING HERE OR SOMETHING
-                    print(f'Overlap at {location} at minutes {row_a['start time']} - {row_a['end time']} (BUS {row_a["bus"]}) and {row_b['start time']} - {row_b['end time']} (BUS {row_b["bus"]})')
-                    #######
+                if(row_a['start time'] < row_b['end time']
+                    and row_b['start time'] < row_a['end time']
+                    and row_a['line'] == row_b['line']
+                    and row_a['line'] != -1):
+
                     overlap_dict.append({
                     'location': location,
                     'bus_a': row_a['bus'],
@@ -133,8 +157,10 @@ def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in th
                     'start_b': row_b['start time'],
                     'end_b': row_b['end time'],
 })
-
+    # 18 overlaps now with the line thing
     return overlap_dict
+
+
 
 def check_gaps(bus_plan: pd.DataFrame):
     '''
@@ -340,8 +366,6 @@ def calculate_energy_levels(capacity:int, safety_margin:float, bus_plan:pd.DataF
             })
 
     return battery_level_errors
-
-calculate_energy_levels(capacity= 300, safety_margin= 0.1, bus_plan=Bus_Plan)
 
 
 # %%
