@@ -16,7 +16,13 @@ Bus_Plan = pd.read_excel('Bus Planning.xlsx')
 
 #  TODO might have to be changed to input from site or something here 
 
-# order is important here for these functions to work properly
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod(verbose=True)
+
+# show doctest info in output, verbose=True shows more info about the tests
+# this is also needed to actually see tests that did pass 
+# this only runs if the file is run directly, not if it is imported as a module
 
 def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     '''
@@ -31,6 +37,13 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     ---------
     bus_plan : pd.Series
         The bus plan line column with empty line values filled with the next available line value for the same bus.
+
+    >>> test_data = pd.DataFrame({
+    ...     'bus': [1, 1, 1],
+    ...     'start time': [0, 10, 20],'line': [None, 401, None],
+    ... })
+    >>> list(convert_empty_line_to_next(test_data))
+    [401.0, 401.0, -1.0]
     '''
     bus_plan = bus_plan.sort_values(by=['bus', 'start time'])
     filled = bus_plan['line'] = bus_plan.groupby('bus')['line'].bfill() 
