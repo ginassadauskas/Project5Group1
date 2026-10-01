@@ -45,6 +45,7 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     >>> list(convert_empty_line_to_next(test_data))
     [401.0, 401.0, -1.0]
     '''
+
     bus_plan = bus_plan.sort_values(by=['bus', 'start time'])
     filled = bus_plan['line'] = bus_plan.groupby('bus')['line'].bfill() 
     #bfill does exactly the thing I need in a single function
