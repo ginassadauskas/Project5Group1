@@ -3,7 +3,7 @@ import pandas as pd
 
 
 st.set_page_config(
-    page_title="Bus Planning",
+    page_title="Bus Schedule Optimizer",
     page_icon="🚌",
     layout="wide"
 )
@@ -11,10 +11,11 @@ st.set_page_config(
 
 required_columns = [
     "bus",
-    "location",
+    "start location",
     "activity",
-    "start_time",
-    "end_time"
+    "start time",
+    "end time",
+    "end location"
 ]
 
 
@@ -30,7 +31,7 @@ def clean_data(df):
 
     duplicates = df.duplicated().sum()
 
-    if duplicates:
+    if duplicates > 0:
         df = df.drop_duplicates()
         changes.append(
             f"Removed {duplicates} duplicate rows"
@@ -38,45 +39,47 @@ def clean_data(df):
 
     empty_rows = df.isna().all(axis=1).sum()
 
-    if empty_rows:
+    if empty_rows > 0:
         df = df.dropna(how="all")
         changes.append(
             f"Removed {empty_rows} empty rows"
         )
 
-    missing = df.isna().sum().sum()
+    missing_values = df.isna().sum().sum()
 
-    if missing:
+    if missing_values > 0:
         df = df.ffill()
         changes.append(
-            f"Filled {missing} missing values"
+            f"Filled {missing_values} missing values"
         )
 
     if not changes:
-        changes.append("No problems were found")
+        changes.append("No cleaning was necessary")
 
     return df.reset_index(drop=True), changes
 
 
 def optimize_schedule(df):
-    # Replace this with the scheduling model
+    # The actual optimization model can be added here.
     return df.copy()
 
 
-st.title("Bus Planning")
+st.title("Bus Schedule Optimizer")
 
 st.write(
-    "Upload a bus schedule to check the data and create "
-    "an improved schedule."
+    "Upload a bus schedule to check, clean and improve the data."
 )
 
+st.divider()
+
+
 uploaded_file = st.file_uploader(
-    "Choose a schedule",
+    "Upload an Excel or CSV file",
     type=["xlsx", "csv"]
 )
 
 
-if uploaded_file:
+if uploaded_file is not None:
 
     df = load_data(uploaded_file)
 
@@ -87,26 +90,31 @@ if uploaded_file:
     ]
 
     if missing_columns:
-        st.error("The following columns are missing:")
+
+        st.error("The following required columns are missing:")
 
         for column in missing_columns:
             st.write(f"- {column}")
 
         st.stop()
 
-    cleaned_df, changes = clean_data(df)
-    optimized_df = optimize_schedule(cleaned_df)
+    st.success("File uploaded successfully.")
 
-    st.success("Schedule loaded successfully.")
+    cleaned_df, changes = clean_data(df)
+
+    optimized_df = optimize_schedule(cleaned_df)
 
     st.divider()
 
-    st.subheader("Overview")
+    st.subheader("Schedule overview")
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric("Trips", len(optimized_df))
+        st.metric(
+            "Trips",
+            len(optimized_df)
+        )
 
     with col2:
         st.metric(
@@ -116,32 +124,34 @@ if uploaded_file:
 
     with col3:
         st.metric(
-            "Locations",
-            optimized_df["location"].nunique()
+            "Start locations",
+            optimized_df["start location"].nunique()
         )
 
     with col4:
         st.metric(
-            "Activities",
-            optimized_df["activity"].nunique()
+            "End locations",
+            optimized_df["end location"].nunique()
         )
 
     st.divider()
 
-    st.subheader("Schedule")
+    st.subheader("Optimized schedule")
 
     st.dataframe(
         optimized_df,
-        use_container_width=True
+        use_container_width=True,
+        height=400
     )
 
     st.divider()
 
-    st.subheader("Schedule overview")
+    st.subheader("Schedule analysis")
 
     left, right = st.columns(2)
 
     with left:
+
         st.write("Activities")
 
         activity_counts = (
@@ -152,6 +162,7 @@ if uploaded_file:
         st.bar_chart(activity_counts)
 
     with right:
+
         st.write("Trips per bus")
 
         bus_counts = (
@@ -162,6 +173,30 @@ if uploaded_file:
 
         st.bar_chart(bus_counts)
 
+    left, right = st.columns(2)
+
+    with left:
+
+        st.write("Starting locations")
+
+        start_locations = (
+            optimized_df["start location"]
+            .value_counts()
+        )
+
+        st.bar_chart(start_locations)
+
+    with right:
+
+        st.write("Ending locations")
+
+        end_locations = (
+            optimized_df["end location"]
+            .value_counts()
+        )
+
+        st.bar_chart(end_locations)
+
     st.divider()
 
     st.subheader("Data cleaning")
@@ -171,11 +206,11 @@ if uploaded_file:
 
     st.divider()
 
-    csv = optimized_df.to_csv(index=False)
+    csv_file = optimized_df.to_csv(index=False)
 
     st.download_button(
-        "Download schedule",
-        csv,
-        "optimized_schedule.csv",
-        "text/csv"
+        "Download optimized schedule",
+        data=csv_file,
+        file_name="optimized_schedule.csv",
+        mime="text/csv"
     )
