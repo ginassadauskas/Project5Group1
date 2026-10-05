@@ -1,38 +1,33 @@
 import streamlit as st
 import pandas as pd
 
+
 st.set_page_config(
-    page_title="Bus Schedule Optimizer PROTOTYPE 2",
-    page_icon="🚌",
+    page_title="Bus Schedule Optimizer",
     layout="wide"
 )
 
-# =========================================================
-# FUNCTIONS
-# =========================================================
 
-REQUIRED_COLUMNS = [
-    "Bus",
-    "Start",
-    "End",
-    "Start Time",
-    "End Time"
+required_columns = [
+    "bus",
+    "location",
+    "activity",
+    "start_time",
+    "end_time"
 ]
 
 
-def load_file(file):
-
+def load_data(file):
     if file.name.endswith(".xlsx"):
         return pd.read_excel(file)
 
     return pd.read_csv(file)
 
 
-def validate_file(df):
-
+def check_data(df):
     missing = [
         column
-        for column in REQUIRED_COLUMNS
+        for column in required_columns
         if column not in df.columns
     ]
 
@@ -40,111 +35,90 @@ def validate_file(df):
 
 
 def clean_data(df):
+    changes = []
 
-    report = []
+    duplicate_count = df.duplicated().sum()
 
-    duplicates = df.duplicated().sum()
-
-    if duplicates:
+    if duplicate_count:
         df = df.drop_duplicates()
 
-        report.append(
-            f"Removed {duplicates} duplicate rows."
+        changes.append(
+            f"{duplicate_count} duplicate rows removed"
         )
 
-    empty = df.isna().all(axis=1).sum()
+    empty_count = df.isna().all(axis=1).sum()
 
-    if empty:
+    if empty_count:
         df = df.dropna(how="all")
 
-        report.append(
-            f"Removed {empty} empty rows."
+        changes.append(
+            f"{empty_count} empty rows removed"
         )
 
-    missing = df.isna().sum().sum()
+    missing_count = df.isna().sum().sum()
 
-    if missing:
+    if missing_count:
         df = df.ffill()
 
-        report.append(
-            f"Filled {missing} missing values."
+        changes.append(
+            f"{missing_count} missing values filled"
         )
 
-    if not report:
-        report.append(
-            "No cleaning problems were detected."
-        )
+    if not changes:
+        changes.append("No cleaning was necessary")
 
-    return df.reset_index(drop=True), report
+    return df.reset_index(drop=True), changes
 
 
-def optimize(df):
-
-    # Replace this with your optimization algorithm
-
+def optimize_schedule(df):
+    # Add the actual optimization model here
     return df.copy()
 
 
-# =========================================================
-# HEADER
-# =========================================================
+st.title("Bus Schedule Optimizer")
 
-st.title("🚌 Bus Schedule Optimizer")
-
-st.caption(
-    "Upload your schedule and improve its structure, "
-    "quality and usability."
+st.write(
+    "A tool for cleaning and improving bus schedules."
 )
 
 st.divider()
 
 
-# =========================================================
-# PROGRESS
-# =========================================================
-
 step = st.radio(
-    "Process",
+    "Step",
     [
-        "① Upload",
-        "② Check",
-        "③ Clean",
-        "④ Optimize",
-        "⑤ Results"
+        "Upload",
+        "Check",
+        "Clean",
+        "Optimize",
+        "Results"
     ],
     horizontal=True
 )
 
 
-# =========================================================
-# STEP 1
-# =========================================================
+if step == "Upload":
 
-if step == "① Upload":
-
-    st.header("Upload your bus schedule")
+    st.header("Upload")
 
     st.write(
-        "Upload an Excel or CSV file containing your "
+        "Choose the Excel or CSV file containing the "
         "bus schedule."
     )
 
-    uploaded_file = st.file_uploader(
-        "Choose a file",
+    file = st.file_uploader(
+        "Schedule file",
         type=["xlsx", "csv"]
     )
 
-    if uploaded_file:
+    if file:
+        st.session_state["file"] = file
 
-        st.session_state["uploaded_file"] = uploaded_file
+        df = load_data(file)
 
-        st.success(
-            f"Uploaded: {uploaded_file.name}"
-        )
+        st.success("File uploaded.")
 
-        df = load_file(uploaded_file)
-
-        st.write("Preview:")
+        st.write("Preview")
 
         st.dataframe(
             df.head(10),
@@ -152,53 +126,45 @@ if step == "① Upload":
         )
 
 
-# =========================================================
-# STEP 2
-# =========================================================
+elif step == "Check":
 
-elif step == "② Check":
+    st.header("Check the data")
 
-    st.header("Check your schedule")
-
-    if "uploaded_file" not in st.session_state:
-
-        st.warning(
-            "Please upload a file first."
-        )
-
+    if "file" not in st.session_state:
+        st.warning("Upload a file first.")
         st.stop()
 
-    df = load_file(
-        st.session_state["uploaded_file"]
+    df = load_data(
+        st.session_state["file"]
     )
 
-    missing = validate_file(df)
+    missing = check_data(df)
 
     if missing:
 
-        st.error("Missing required columns:")
+        st.error("Some columns are missing.")
 
         for column in missing:
-            st.write(f"❌ {column}")
+            st.write(f"- {column}")
 
     else:
 
         st.success(
-            "✓ All required columns are present."
+            "All required columns were found."
         )
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric(
-                "Rows",
-                len(df)
-            )
+            st.metric("Rows", len(df))
 
         with col2:
+            st.metric("Buses", df["bus"].nunique())
+
+        with col3:
             st.metric(
-                "Columns",
-                len(df.columns)
+                "Locations",
+                df["location"].nunique()
             )
 
         st.dataframe(
@@ -207,156 +173,111 @@ elif step == "② Check":
         )
 
 
-# =========================================================
-# STEP 3
-# =========================================================
+elif step == "Clean":
 
-elif step == "③ Clean":
+    st.header("Clean the data")
 
-    st.header("Clean the schedule")
-
-    if "uploaded_file" not in st.session_state:
-        st.warning("Please upload a file first.")
+    if "file" not in st.session_state:
+        st.warning("Upload a file first.")
         st.stop()
 
-    df = load_file(
-        st.session_state["uploaded_file"]
+    df = load_data(
+        st.session_state["file"]
     )
 
-    cleaned_df, report = clean_data(df)
+    cleaned_df, changes = clean_data(df)
 
-    st.subheader("Cleaning report")
+    for change in changes:
+        st.success("✓ " + change)
 
-    for item in report:
-
-        st.success(
-            "✓ " + item
-        )
-
-    st.subheader("Cleaned schedule")
+    st.write("Cleaned schedule")
 
     st.dataframe(
         cleaned_df,
         use_container_width=True
     )
 
-    st.session_state["cleaned_df"] = cleaned_df
+    st.session_state["cleaned"] = cleaned_df
 
 
-# =========================================================
-# STEP 4
-# =========================================================
-
-elif step == "④ Optimize":
+elif step == "Optimize":
 
     st.header("Optimize the schedule")
 
-    if "cleaned_df" not in st.session_state:
-
-        st.warning(
-            "Please complete the cleaning step first."
-        )
-
+    if "cleaned" not in st.session_state:
+        st.warning("Clean the data first.")
         st.stop()
 
     st.write(
-        "The optimization algorithm will now "
-        "generate an improved bus schedule."
+        "The cleaned schedule can now be passed to "
+        "the optimization model."
     )
 
     if st.button(
-        "🚀 Run optimization",
+        "Run optimization",
         type="primary"
     ):
 
-        optimized = optimize(
-            st.session_state["cleaned_df"]
+        result = optimize_schedule(
+            st.session_state["cleaned"]
         )
 
-        st.session_state["optimized_df"] = optimized
+        st.session_state["optimized"] = result
 
         st.success(
-            "Optimization complete!"
+            "Optimization finished."
         )
 
         st.dataframe(
-            optimized,
+            result,
             use_container_width=True
         )
 
 
-# =========================================================
-# STEP 5
-# =========================================================
+elif step == "Results":
 
-elif step == "⑤ Results":
+    st.header("Results")
 
-    st.header("📊 Results")
-
-    if "optimized_df" not in st.session_state:
-
-        st.warning(
-            "Please run the optimization first."
-        )
-
+    if "optimized" not in st.session_state:
+        st.warning("Run the optimization first.")
         st.stop()
 
-    df = st.session_state["optimized_df"]
-
-    # Metrics
+    df = st.session_state["optimized"]
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric(
-            "Total trips",
-            len(df)
-        )
+        st.metric("Trips", len(df))
 
     with col2:
-        st.metric(
-            "Buses",
-            df["Bus"].nunique()
-        )
+        st.metric("Buses", df["bus"].nunique())
 
     with col3:
         st.metric(
-            "Schedule rows",
-            len(df)
+            "Locations",
+            df["location"].nunique()
         )
 
     st.divider()
 
-    # Graphs
+    st.subheader("Activities")
 
-    st.subheader("📈 Schedule graphs")
+    activities = df["activity"].value_counts()
 
-    if "Bus" in df.columns:
+    st.bar_chart(activities)
 
-        trips_per_bus = (
-            df["Bus"]
-            .value_counts()
-            .sort_index()
-        )
-
-        st.bar_chart(
-            trips_per_bus
-        )
-
-    st.subheader("Optimized schedule")
+    st.subheader("Schedule")
 
     st.dataframe(
         df,
         use_container_width=True
     )
 
-    # Download
-
     csv = df.to_csv(index=False)
 
     st.download_button(
-        "⬇ Download schedule",
+        "Download optimized schedule",
         csv,
-        "optimized_bus_schedule.csv",
+        "optimized_schedule.csv",
         "text/csv"
     )
