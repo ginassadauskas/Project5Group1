@@ -55,13 +55,6 @@ def trip_ratio(schedule: pd.DataFrame, trip_duration: bool | None=None) -> float
     all_times = schedule.groupby('activity').sum()['trip duration']
     return float(1 - (all_times.sum() - all_times['service trip'])/all_times.sum())
 
-def calculate_batterydegridation():
-    """Calculates the average battery degridation of the busses.
-
-    Unused. Advanced battery has not been implemented and battery degridation cannot be calculated.
-    [returns] 1  
-    """
-    return 1
 
 def merge_route_plan(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> pd.DataFrame:
     """Merges the excel lines that need to be run and the distance file of those lines.
@@ -88,47 +81,38 @@ def merge_route_plan(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) 
         "distance_m", "min_travel_time", "max_travel_time"]
     ]
 
+    timetable['arrival_time'] = timetable['departure_time']+timetable['max_travel_time']
+
     return timetable
 
-def min_b_helper(merged_data: pd.DataFrame) -> pd.DataFrame:
-    """Adds a few important columns to the merged dataframe for processing of the bus calculations.
+def min_service_time(dd: pd.DataFrame) -> int:
+     """returns the theoretical minimum trip time.
 
-    [input] The output of merge_route_plan()
-    
-    [returns] A new dataframe with arrival time added.
-    """
-    merged_data = merged_data.copy()
-    merged_data['departure_time'] = sc.convert_time_to_minutes(merged_data['departure_time'])
-    merged_data['departure_time'] = sc.adjust_for_midnight(merged_data['departure_time'])
-    merged_data = merged_data.sort_values('departure_time').reset_index(drop=True)
-    merged_data['arrival_time'] = merged_data['departure_time'] + merged_data['max_travel_time']
+     [dd] Distance Matrix in minutes
+     [returns] lowest trip time on a service trip.
+     """
+     return min(dd.dropna()['min_travel_time'])
 
-    return merged_data
+def earliest_service(tt: pd.DataFrame) -> int:
+     """Finds the earliest service trip
+     
+     [tt] Time Table in minutes
+     [returns] time of first service trip"""
+     return min(tt['departure_time'])
 
-def bus_sweep(data: pd.DataFrame) -> int:
-        """Using a modified Sweep Search algorithm, find the minimum buses required.
+def latest_service(tt: pd.DataFrame, dd: pd.DataFrame) -> int:
+     """Finds the end time of the latest service trip
 
-        [data] The result from min_b_helper()
+     [tt] Time table in minutes
+     [dd] Distance Matrix in minutes
+     [returns] End time of the last bus
+     """
+     return max(tt['departure_time']) + max(dd.dropna()['min_travel_time'])
 
-        [returns] The minimum number of busses required to run the given schedule.
-        """
-        max = 0
-        for i in range(len(data)):
-                bus_req = len(data.loc[
-                        (
-                                (data['departure_time'] > data['departure_time'][i]) & 
-                                (data['departure_time'] <= data['arrival_time'][i])
-                        ) |
-                        (
-                                (data['departure_time'] < data['departure_time'][i]) & 
-                                (data['arrival_time'] >= data['departure_time'][i])
-                        )
-                ])
-                if bus_req > max:
-                        max = bus_req
-
-        return max+1
-#Bus sweep is based on a sweep search algorithm. AI suggested to use Sweep Search.
+def simulbus(merged: pd.DataFrame, time: int):
+     """Counts the number of buses that need to be active at the given time.
+     """
+     return sum(merged['departure_time'] < time) - sum(merged['arrival_time'] < time)
 
 def minimum_bus(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> int:
      """Using a modified Sweep Search algorithm, find the minimum buses required.
@@ -136,11 +120,19 @@ def minimum_bus(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> in
      This function combines bus_sweep, min_b_helper, and merge_route_plan.
      These three functions are meant to be used in succession, and are only used for this function.
      """
-     return bus_sweep(
-          min_b_helper(
-               merge_route_plan(
-                    req_bus_line, distance_matrix
-          )))
+     max_bus = 0
+     merged = merge_route_plan(req_bus_line, distance_matrix)
+     
+     for minute in range(
+         earliest_service(req_bus_line), 
+         latest_service(req_bus_line, distance_matrix), 
+         min_service_time(distance_matrix)
+     ):  
+        
+        bus_need = simulbus(merged, minute)
+        max_bus = bus_need if bus_need > max_bus else max_bus
+
+     return max_bus
 
 def count_buses(schedule: pd.DataFrame) -> int:
      """Counts the number of buses used in the given schedule.
