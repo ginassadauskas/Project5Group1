@@ -10,9 +10,9 @@ import pandas as pd
 
 ##################
 
-tt = pd.read_excel('Timetable.xlsx')
-Dist_matrix = pd.read_excel('DistanceMatrix.xlsx')
-Bus_Plan = pd.read_excel('Bus Planning.xlsx')
+tt = pd.read_excel('GinasFolder/Timetable.xlsx')
+Dist_matrix = pd.read_excel('GinasFolder/DistanceMatrix.xlsx')
+Bus_Plan = pd.read_excel('GinasFolder/Bus Planning.xlsx')
 
 #  TODO might have to be changed to input from site or something here 
 
@@ -56,8 +56,7 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
 Bus_Plan['line'] = convert_empty_line_to_next(Bus_Plan)
 
 
-
-def convert_time_to_minutes(time_column: pd.Series, include_seconds: bool=True):
+def convert_time_to_minutes(time_column: pd.Series, threshold: int=180) -> pd.Series:
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
 
@@ -77,9 +76,10 @@ def convert_time_to_minutes(time_column: pd.Series, include_seconds: bool=True):
         temp = pd.to_datetime(time_column, format='%H:%M')
 
     minutes = temp.dt.hour * 60 + temp.dt.minute
-    return minutes
 
-def adjust_for_midnight(time_column: pd.Series, threshold: int = 180):
+    return _adjust_for_midnight(minutes, threshold)
+
+def _adjust_for_midnight(time_column: pd.Series, threshold: int = 180) -> pd.Series:
 
     '''
         Converts a column of time in minutes in int format to minutes since midnight, adjusting for times that cross midnight.
@@ -114,8 +114,6 @@ def adjust_time(bus_plan: pd.DataFrame):
     '''
     bus_plan['start time'] = convert_time_to_minutes(bus_plan['start time'])
     bus_plan['end time'] = convert_time_to_minutes(bus_plan['end time'])
-    bus_plan['start time'] = adjust_for_midnight(bus_plan['start time'])
-    bus_plan['end time'] = adjust_for_midnight(bus_plan['end time'])
 
     return bus_plan
 
@@ -645,12 +643,6 @@ def verify_schedule(
             bus_plan['end time']
         )
 
-        bus_plan['start time'] = adjust_for_midnight(
-            bus_plan['start time']
-        )
-        bus_plan['end time'] = adjust_for_midnight(
-            bus_plan['end time']
-        )
         # Checks that return lists
         errors.extend(check_gaps(bus_plan))
         errors.extend(check_start_end_location(bus_plan))
