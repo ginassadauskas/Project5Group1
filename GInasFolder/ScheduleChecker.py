@@ -24,6 +24,7 @@ if __name__ == "__main__":
 # this is also needed to actually see tests that did pass 
 # this only runs if the file is run directly, not if it is imported as a module
 
+###Upon upload
 def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     '''
     Converts empty line values in the bus plan to the next available line value for the same bus.
@@ -56,6 +57,7 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
 Bus_Plan['line'] = convert_empty_line_to_next(Bus_Plan)
 
 
+###Upon upload
 def convert_time_to_minutes(time_column: pd.Series, threshold: int=180) -> pd.Series:
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
@@ -79,6 +81,7 @@ def convert_time_to_minutes(time_column: pd.Series, threshold: int=180) -> pd.Se
 
     return _adjust_for_midnight(minutes, threshold)
 
+##Automatically ran with prev function
 def _adjust_for_midnight(time_column: pd.Series, threshold: int = 180) -> pd.Series:
 
     '''
@@ -117,6 +120,7 @@ def adjust_time(bus_plan: pd.DataFrame):
 
     return bus_plan
 
+#check step
 def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in the marked section 
 
     '''
@@ -176,6 +180,7 @@ def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in th
 
 overlaps = check_for_overlaps(Bus_Plan)
 
+#check step
 def check_gaps(bus_plan: pd.DataFrame):
     '''
     Checks for gaps in the bus plan where a bus has a gap/overlap between its end time and the next start time.
@@ -214,6 +219,7 @@ def check_gaps(bus_plan: pd.DataFrame):
                 })
     return gap_data
 
+#check step
 def check_start_end_location(bus_plan: pd.DataFrame): 
     
     '''
@@ -260,6 +266,8 @@ def check_start_end_location(bus_plan: pd.DataFrame):
     # also 18 mismatches to maybe relevant to the idling for 1 minute case 
     return location_mismatches
 
+
+#check step
 def check_garage(bus_plan: pd.DataFrame):
     '''
     Checks if the first and last location of the whole schedule for each bus is the garage

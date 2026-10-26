@@ -96,7 +96,8 @@ step = st.radio(
         "Check",
         "Clean",
         "Optimize",
-        "Results"
+        "Results",
+        "Comparison"
     ],
     horizontal=True
 )
@@ -110,30 +111,96 @@ if step == "Upload":
 
     st.header("1. Upload")
 
-    st.write(
-        "Upload an Excel or CSV file containing the "
-        "bus schedule."
+    upload_mode = st.radio(
+        "Choose an upload option",
+        [
+            "Completed schedule",
+            "Distance matrix + time table"
+        ],
+        horizontal=True,
+        key="upload_mode"
     )
 
-    uploaded_file = st.file_uploader(
-        "Choose a file",
-        type=["xlsx", "csv"]
-    )
+    if upload_mode == "Completed schedule":
 
-    if uploaded_file is not None:
+        st.session_state.pop("distance_matrix_file", None)
+        st.session_state.pop("time_table_file", None)
 
-        st.session_state["uploaded_file"] = uploaded_file
-
-        df = load_data(uploaded_file)
-
-        st.success("File uploaded successfully.")
-
-        st.write("Preview")
-
-        st.dataframe(
-            df.head(20),
-            use_container_width=True
+        st.write(
+            "Upload a single Excel or CSV file containing the "
+            "completed bus schedule."
         )
+
+        uploaded_file = st.file_uploader(
+            "Choose a completed schedule",
+            type=["xlsx", "csv"],
+            key="uploaded_schedule_file"
+        )
+
+        if uploaded_file is not None:
+            st.session_state["uploaded_file"] = uploaded_file
+
+            df = load_data(uploaded_file)
+
+            st.success("Schedule uploaded successfully.")
+
+            st.write("Preview")
+
+            st.dataframe(
+                df.head(20),
+                use_container_width=True
+            )
+
+    else:
+
+        st.session_state.pop("uploaded_file", None)
+
+        st.write(
+            "Upload both files needed to build the schedule: "
+            "the distance matrix and the time table."
+        )
+
+        distance_matrix_file = st.file_uploader(
+            "Upload distance matrix",
+            type=["xlsx", "csv"],
+            key="distance_matrix_file"
+        )
+
+        time_table_file = st.file_uploader(
+            "Upload time table",
+            type=["xlsx", "csv"],
+            key="time_table_file"
+        )
+
+        if distance_matrix_file is not None and time_table_file is not None:
+            st.session_state["distance_matrix_file"] = distance_matrix_file
+            st.session_state["time_table_file"] = time_table_file
+
+            st.success("Both files uploaded successfully.")
+
+            st.write("Distance matrix preview")
+            st.dataframe(
+                load_data(distance_matrix_file).head(20),
+                use_container_width=True
+            )
+
+            st.write("Time table preview")
+            st.dataframe(
+                load_data(time_table_file).head(20),
+                use_container_width=True
+            )
+
+        elif distance_matrix_file is not None or time_table_file is not None:
+            st.info("Please upload both files to continue.")
+
+    st.write("\n")
+    starting_energy = st.slider(
+        "Percentage of battery to start the buses",
+        0,
+        100,
+        25
+    )
+    st.write(f"Input the starting energy for the buses: {starting_energy}%")
 
 
 # ---------------------------------------------------------
@@ -365,3 +432,55 @@ elif step == "Results":
         file_name="optimized_schedule.csv",
         mime="text/csv"
     )
+
+
+# ---------------------------------------------------------
+# COMPARISON
+# ---------------------------------------------------------
+
+elif step == "Comparison":
+
+    st.header("6. Compare before and after")
+
+    if "cleaned_df" not in st.session_state:
+
+        st.warning(
+            "Please complete the cleaning step first."
+        )
+
+        st.stop()
+
+    if "optimized_df" not in st.session_state:
+
+        st.warning(
+            "Please run the optimization first."
+        )
+
+        st.stop()
+
+    before_df = st.session_state["cleaned_df"].copy()
+    after_df = st.session_state["optimized_df"].copy()
+
+    st.write(
+        "Side-by-side view of the schedule before and after "
+        "the optimization step."
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Before optimization")
+        st.dataframe(
+            before_df,
+            use_container_width=True,
+            height=500
+        )
+
+    with col2:
+        st.subheader("After optimization")
+        st.dataframe(
+            after_df,
+            use_container_width=True,
+            height=500
+        )
+
