@@ -20,8 +20,7 @@ def upload_display():
         st.session_state.pop("time_table_file", None)
 
         st.write(
-            "Upload a single Excel or CSV file containing the "
-            "completed bus schedule."
+            "Please move on to the next step if you already have a completed bus schedule. Otherwise, you can upload the distance matrix and time table to build a new schedule."
         )
 
         uploaded_file = st.file_uploader(
