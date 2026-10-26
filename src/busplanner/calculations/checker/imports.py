@@ -1,3 +1,6 @@
+import pandas as pd
+from ..imports import convert_time_to_minutes
+
 def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     '''
     Converts empty line values in the bus plan to the next available line value for the same bus.
@@ -25,3 +28,13 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     #bfill does exactly the thing I need in a single function
 
     return filled.fillna(-1)  # fill any remaining NaN values with -1 to indicate no line available
+
+def import_bus_plan(bus_plan: pd.DataFrame):
+    """Imports and prepares the bus plan for further processing.
+    """
+    bus_plan = bus_plan.copy()
+
+    bus_plan['start time'] = convert_time_to_minutes(bus_plan['start time'])
+    bus_plan['end time'] = convert_time_to_minutes(bus_plan['end time'])
+
+    return convert_empty_line_to_next(bus_plan)

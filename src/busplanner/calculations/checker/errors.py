@@ -1,10 +1,12 @@
 """File mistakes that cannot be fixed by the tool
 """
+import pandas as pd
+import numpy as np
+from busplanner.calculations.defaults import CHARGER
+from busplanner.calculations.power import energy_levels, safety_margin
 
-def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in the marked section 
-
-    '''
-    Checks for overlapping idle times for buses at the same location in the bus plan.
+def overlaps(bus_plan: pd.DataFrame): #TODO WARNING at the bottom in the marked section 
+    '''Checks for overlapping idle times for buses at the same location in the bus plan.
 
     Parameters:
     ---------
@@ -16,47 +18,30 @@ def check_for_overlaps(bus_plan:pd.DataFrame): #TODO WARNING at the bottom in th
     overlap_dict : dict
         A dict containing information about overlapping idle times, including the location, bus identifiers, and their respective start and end times.
     '''
+    # filter buses by ones that are actually idle, 
+    #   then group by line, keeping only relevant columns.
 
-    # filter buses by ones that are actually idle 
-    # + filter out garage buses (ehvgar) since they PROBABLY have enough space to fit enough
-    filtered =  bus_plan[(bus_plan['activity'] == 'idle') & (bus_plan['start location'] != 'ehvgar')]
+    print(bus_plan)
+    
+    filtered = bus_plan.copy().loc[
+        (bus_plan['activity'].str == 'idle') & 
+        (bus_plan['start location'].str not in CHARGER)
+        ]
+    filtered = filtered['start time', 'end time', 'line'].groupby('line')
 
-    grouped = filtered.groupby(['start location'])
-    # gives table of rows that share the same start location
-    # groupby gives a tuple so it's a key and then the actual value (in this case start location)
-    # this means that the key is the value of the group inside a dataframe (garage, station, etc.)
+    left = filtered.reset_index(names="Duplicate")
+    right = filtered.reset_index(names="With")
 
-    overlap_dict = []  # make a list of possible overlaps 
+    pairs = left.merge(right, on="bus", suffixes=(" 1", " 2"))
 
-    for location, group_df in grouped:
-        rows = group_df.to_dict('records')  # turns the group into a plain list of dicts, one per row
+    overlaps = pairs[
+        (pairs["Duplicate1"] < pairs["With"])
+        & (pairs["start time 1"] <= pairs["end time 2"])
+        & (pairs["Start time 2"] <= pairs["end time 1"])
+    ]
 
-        for i in range(len(rows)):
-            for j in range(i + 1, len(rows)):
-                row_a = rows[i]
-                row_b = rows[j]
+    return overlaps
 
-                # Generate unique pairs that are not the same bus (OR5 material WOW)
-                
-                if row_a['bus'] == row_b['bus']:
-                    continue # don't compare the same bus just in case 
-
-                if(row_a['start time'] < row_b['end time']
-                    and row_b['start time'] < row_a['end time']
-                    and row_a['line'] == row_b['line']
-                    and row_a['line'] != -1):
-
-                    overlap_dict.append({
-                    'location': location,
-                    'bus_a': row_a['bus'],
-                    'bus_b': row_b['bus'],
-                    'start_a': row_a['start time'],
-                    'end_a': row_a['end time'],
-                    'start_b': row_b['start time'],
-                    'end_b': row_b['end time'],
-    })
-    # 18 overlaps now with the line thing
-    return overlap_dict
 
 def check_start_end_location(bus_plan: pd.DataFrame): 
     
@@ -183,3 +168,19 @@ def check_line_value(bus_plan: pd.DataFrame):
 def validate_file_type(filename: str):
     if not filename.endswith(('.xlsx', '.xls', '.csv')):
         return TypeError(f"'{filename}' is not an excel/csv file. Please insert an excel or csv file.")
+
+def validate_energy(bus_plan):
+
+    bus_plan = energy_levels(bus_plan) #Change to add battery consumption if necessary
+
+    battery_level_errors = []
+
+    for row in range(len(bus_plan)):
+        if bus_plan.iloc[row]['energy_level'] < safety_margin():
+            battery_level_errors.append({
+                'bus': bus_plan.iloc[row]['bus'],
+                'start time': bus_plan.iloc[row]['start time'],
+                'energy_level': bus_plan.iloc[row]['energy_level']
+            })
+
+    return battery_level_errors

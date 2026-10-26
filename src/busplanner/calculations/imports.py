@@ -1,9 +1,10 @@
 """All functions related to importing the files
 """
 import pandas as pd
-from power import powerpertrip
+from .defaults import MIDNIGHT
+from .power import powerpertrip
 
-def convert_time_to_minutes(time_column: pd.Series, threshold: int=180) -> pd.Series:
+def convert_time_to_minutes(time_column: pd.Series, threshold: int=MIDNIGHT) -> pd.Series:
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
 
@@ -23,10 +24,9 @@ def convert_time_to_minutes(time_column: pd.Series, threshold: int=180) -> pd.Se
         temp = pd.to_datetime(time_column, format='%H:%M')
 
     minutes = temp.dt.hour * 60 + temp.dt.minute
-
     return _adjust_for_midnight(minutes, threshold)
 
-def _adjust_for_midnight(time_column: pd.Series, threshold: int = 180) -> pd.Series:
+def _adjust_for_midnight(time_column: pd.Series, threshold: int=MIDNIGHT) -> pd.Series:
 
     '''
         Converts a column of time in minutes in int format to minutes since midnight, adjusting for times that cross midnight.
