@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import 
+
 
 st.set_page_config(
     page_title="Bus Schedule Optimizer",
@@ -57,7 +57,7 @@ match step:
     case "Clean":
 
         # call functions from clean.py
-
+        pass
 # ---------------------------------------------------------
 # OPTIMIZE
 # ---------------------------------------------------------
@@ -65,30 +65,33 @@ match step:
     case "Optimize":
 
         # call functions from optimize.py
-
+        pass
 
 
     case "Results":
 
         # call functions from results.py
-
+        pass
 
     case "Comparison":
-
+        
         # call functions from comparison.py
-
+        pass
 
 
     case "Optimize":
         # call functions from optimize.py
-
+        pass
 
     case "Results":
         # call functions from results.py
-
+        pass
 
     case "Comparison":
+
         # call functions from comparison.py
+        pass
 
     case _:
         st.error("Invalid step selected.")
+        pass
