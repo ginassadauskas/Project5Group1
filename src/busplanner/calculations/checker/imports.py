@@ -37,6 +37,7 @@ def import_bus_plan(bus_plan: pd.DataFrame):
     bus_plan['start time'] = convert_time_to_minutes(bus_plan['start time'])
     bus_plan['end time'] = convert_time_to_minutes(bus_plan['end time'])
     bus_plan['line'] = convert_empty_line_to_next(bus_plan)
+    bus_plan['duration'] = bus_plan['end time'] - bus_plan['start time']
     return bus_plan
 
 
