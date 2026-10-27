@@ -24,3 +24,6 @@ def powerpertrip(distance_series: pd.Series):
     d = distance_series.copy()
 
     return d*kwh.CON_PER_M
+
+
+print('calculations: power.py OK')

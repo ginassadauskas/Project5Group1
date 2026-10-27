@@ -1,3 +1,7 @@
+# def verifyschedule(schedule, mergedtable):
+#    prepdate
+#    run_errors
+#    run_warnings
 
 def verify_schedule(
     filename: str,
@@ -76,3 +80,6 @@ def verify_schedule(
         return errors
 
     return True
+
+
+print('checker: main OK')

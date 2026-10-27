@@ -82,3 +82,6 @@ def bus_ratio(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, distance_matri
     [return] the ratio, ranging between 0 to 1.
      """
      return count_buses(schedule) / minimum_bus(req_bus_line, distance_matrix)
+
+
+print('grade: kpi.py OK')

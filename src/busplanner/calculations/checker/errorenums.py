@@ -53,3 +53,5 @@ class ScheduleValidationError(BusScheduleError):
             f" - {e}" for e in errors
         )
         super().__init__(message)
+
+print('checker: errorenums.py OK')

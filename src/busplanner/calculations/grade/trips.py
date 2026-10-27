@@ -40,3 +40,6 @@ def latest_service(tt: pd.DataFrame, dd: pd.DataFrame) -> int:
      [returns] End time of the last bus
      """
      return max(tt['departure_time']) + max(dd.dropna()['min_travel_time'])
+
+
+print('grade: trips.py OK')

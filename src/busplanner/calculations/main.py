@@ -10,3 +10,6 @@ def merged(timetable, distancematrix):
     See calculations/imports.py line 49-72
     """
     return merge_route_plan(timetable, distancematrix)
+
+
+print('calculations: main.py OK')

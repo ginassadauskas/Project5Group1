@@ -22,7 +22,7 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
     >>> list(convert_empty_line_to_next(test_data))
     [401.0, 401.0, -1.0]
     '''
-
+    bus_plan = bus_plan.copy()
     bus_plan = bus_plan.sort_values(by=['bus', 'start time'])
     filled = bus_plan['line'] = bus_plan.groupby('bus')['line'].bfill() 
     #bfill does exactly the thing I need in a single function
@@ -36,5 +36,8 @@ def import_bus_plan(bus_plan: pd.DataFrame):
 
     bus_plan['start time'] = convert_time_to_minutes(bus_plan['start time'])
     bus_plan['end time'] = convert_time_to_minutes(bus_plan['end time'])
+    bus_plan['line'] = convert_empty_line_to_next(bus_plan)
+    return bus_plan
 
-    return convert_empty_line_to_next(bus_plan)
+
+print('checker: imports OK')

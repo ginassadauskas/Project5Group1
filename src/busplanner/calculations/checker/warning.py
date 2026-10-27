@@ -120,7 +120,7 @@ def validate_line_numbers(bus_plan: pd.DataFrame):
                 f"'{value}' has more than 3 digits.", row=idx))
     return errors
  
- def validate_duplicate_schedule(bus_plan: pd.DataFrame):
+def validate_duplicate_schedule(bus_plan: pd.DataFrame):
     """Finds duplicate rows
     """
     errors = []
@@ -131,3 +131,6 @@ def validate_line_numbers(bus_plan: pd.DataFrame):
             f"Duplicate bus/line/start time combo: bus {row['bus']}, line {row['line']}, "
             f"start {row['start time']}", row=idx))
     return errors
+
+
+print('checker: warnings OK')

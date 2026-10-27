@@ -41,3 +41,6 @@ MIDNIGHT: int = 180
 """
 #A list with each charging spot
 CHARGER: list[str] = ['ehvgar']
+
+
+print('calculations: defaults.py OK')
