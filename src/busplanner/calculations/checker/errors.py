@@ -2,11 +2,11 @@
 """
 import pandas as pd
 import numpy as np
-from busplanner.calculations.defaults import CHARGER
+from busplanner.calculations.defaults import CHARGER, ACTIVITIES, REQ_COL
 from busplanner.calculations.power import energy_levels, safety_margin
 from busplanner.calculations.imports import find_bustrip
 
-def overlaps(bus_plan: pd.DataFrame, drop: bool=False):
+def overlaps(bus_plan: pd.DataFrame, drop: bool=False) -> pd.DataFrame | bool:
     '''Checks for overlapping idle times for buses at the same location in the bus plan.
 
     [bus_plan] A finished bus schedule containing idle times with their start/end time/location and line.
@@ -46,7 +46,7 @@ def overlaps(bus_plan: pd.DataFrame, drop: bool=False):
         with_.rename(columns = lambda x : str(x)[:-2])
         return find_bustrip(duplicate, bus_plan, drop=drop), find_bustrip(with_, bus_plan, drop=drop)
 
-def bus_teleport(bus_plan: pd.DataFrame): 
+def bus_teleport(bus_plan: pd.DataFrame) -> pd.DataFrame | bool: 
     '''
     Checks if the start location of a buses next trip matches the end location of its previous trip.
 
@@ -90,7 +90,7 @@ def bus_teleport(bus_plan: pd.DataFrame):
         return True
     return find_bustrip(pd.DataFrame(location_mismatches))
 
-def start_garage(bus_plan: pd.DataFrame):
+def start_garage(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     '''
     Checks if the first and last location of the whole schedule for each bus is the garage
 
@@ -123,7 +123,7 @@ def start_garage(bus_plan: pd.DataFrame):
         return True
     return pd.concat(garage_issues)
 
-def Service_line(bus_plan: pd.DataFrame):
+def service_line(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     '''
     Checks that every service trip has a non-empty line value.
 
@@ -139,15 +139,20 @@ def Service_line(bus_plan: pd.DataFrame):
     '''
     filtered = bus_plan[bus_plan['activity'] == 'service trip']
     missing_line = filtered[filtered['line'].isna()] 
-    if len(missing_line) == 0:
-        return True
-    return missing_line
+    return True if len(missing_line) == 0 else missing_line
 
-def validate_file_type(filename: str):
+# check if there are any activities that are empty
+def activity_none_empty(bus_plan: pd.DataFrame) -> set | bool:
+    empty_mask = bus_plan['activity'].isnull()
+    return True if len(empty_mask) == 0 else empty_mask
+
+def validate_file_type(filename: str) -> bool:
     return True if filename.endswith(('.xlsx', '.xls', '.csv')) else False
         #TypeError(f"'{filename}' is not an excel/csv file. Please insert an excel or csv file.")
 
-def validate_energy(bus_plan):
+def validate_energy(bus_plan) -> pd.DataFrame | bool:
+    """Checks if any buses run below the safety margin.
+    """
     bus_plan = energy_levels(bus_plan)
     battery_level_errors = []
 
@@ -159,5 +164,29 @@ def validate_energy(bus_plan):
     if len(battery_level_errors) == 0:
         return True
     return pd.concat(battery_level_errors, axis=1).transpose().reset_index(drop=True)
+
+def validate_locations(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame) -> set | bool:
+    unknown_locations = (set(bus_plan['start location']) + set(bus_plan['end location'])) - set(distance_matrix['start'])
+    return True if len(unknown_locations) == 0 else unknown_locations
+
+def validate_columns(bus_plan: pd.DataFrame) -> set | bool:
+    missing = REQ_COL - set(bus_plan.columns)
+    return True if len(missing) == 0 else missing
+
+def validate_activities(bus_plan: pd.DataFrame) -> set | bool:
+    bad_mask = ~bus_plan['activity'].isin(ACTIVITIES)
+    return True if len(bad_mask) == 0 else bad_mask
+
+def validate_line_numbers(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame) -> set | bool:
+    unknown_lines = (set(bus_plan['line'])) - set(distance_matrix['line'])
+    return True if len(unknown_lines) == 0 else unknown_lines
+
+def duplicate_bus(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
+    """Finds rows where a bus takes more than one trip at the same time
+    """
+    bus_plan = bus_plan.copy().sort_values(["bus", "start time"])
+    bus_plan["end time"] = bus_plan.groupby("bus")["end time"].shift(1)
+    overlaps = bus_plan[bus_plan["start time"] < bus_plan["end time"]]
+    return True if len(overlaps) == 0 else overlaps
 
 print('checker: errors.py OK')
