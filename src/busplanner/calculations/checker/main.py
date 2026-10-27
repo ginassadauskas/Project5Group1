@@ -1,3 +1,5 @@
+import pandas as pd
+
 # def verifyschedule(schedule, mergedtable):
 #    prepdate
 #    run_errors

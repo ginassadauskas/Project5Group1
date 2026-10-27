@@ -1,6 +1,6 @@
 """File mistakes that can be solved by the tool
 """
-
+import pandas as pd
 def check_gaps(bus_plan: pd.DataFrame):
     '''
     Checks for gaps in the bus plan where a bus has a gap/overlap between its end time and the next start time.

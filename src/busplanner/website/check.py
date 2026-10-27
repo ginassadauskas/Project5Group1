@@ -1,32 +1,60 @@
 import streamlit as st
 import pandas as pd
 
+from busplanner.calculations.main import verify_schedule
+
+
+def load_data(uploaded_file):
+    """Load an uploaded schedule from CSV or Excel."""
+    file_name = str(uploaded_file.name).lower()
+
+    if file_name.endswith(".csv"):
+        return pd.read_csv(uploaded_file)
+    if file_name.endswith((".xlsx", ".xls")):
+        return pd.read_excel(uploaded_file)
+
+    raise ValueError(f"Unsupported file type: {uploaded_file.name}")
+
+
+def check_data(df):
+    """Run the project validator and return a list of issues if any."""
+    validation = verify_schedule(
+        filename="uploaded_schedule",
+        timetable=pd.DataFrame(),
+        dist_matrix=pd.DataFrame(),
+        bus_plan=df,
+    )
+
+    if validation is True:
+        return []
+    if validation is False:
+        return ["Schedule validation failed."]
+    return [str(item) for item in validation]
+
 
 def check_data_display():
     st.header("2. Check the data")
 
-    if "uploaded_file" not in st.session_state:
+    if "merged_schedule" not in st.session_state:
         st.warning(
-            "Please upload a file first."
+            "Please upload and merge the distance matrix and timetable first."
         )
         st.stop()
 
-    df = load_data(
-        st.session_state["uploaded_file"]
-    )
+    df = st.session_state["merged_schedule"]
 
-    missing = check_data(df) # put in a real function that checks the data for any errors or serious things missing
+    issues = check_data(df)
 
-    if missing:
+    if issues:
         st.error(
-            "The following columns are missing:"
+            "The schedule contains validation issues:"
         )
 
-        for column in missing:
-            st.write(f"- {column}")
+        for issue in issues:
+            st.write(f"- {issue}")
     else:
         st.success(
-            "All required columns are present."
+            "The uploaded schedule passed validation."
         )
 
         col1, col2, col3, col4 = st.columns(4)
@@ -60,6 +88,4 @@ def check_data_display():
             use_container_width=True
         )
 
-
-check_data_display()
 
