@@ -1,3 +1,9 @@
+from typing import Any
+
+#def isvalid(errors: Any) Any | bool:
+#    """Returns True if there are no errors.
+#    """
+#    return True if len(errors) == 0 else errors
 
 class BusScheduleError(Exception):
     """Base class for every error this validator can raise."""
@@ -10,7 +16,6 @@ class BusScheduleError(Exception):
 
 class InvalidFileTypeError(BusScheduleError):
     """The uploaded file isn't a .csv, .xlsx, or .xls file."""
-
 
 class MissingColumnsError(BusScheduleError):
     """One or more required columns are missing. Uses hard values"""
