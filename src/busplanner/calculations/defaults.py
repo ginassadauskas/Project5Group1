@@ -21,16 +21,16 @@ ABSOLUTE_SOC: bool = False
 # Idle consumption is the amount of kWh per minute a bus consumes while it is idling.
 IDLE: float = 1/12 #kW
 
-# How fast do chargers charge?
+# How fast do chargers charge (per minute)?
 # A bus charges at the fast charge rate while its SOC is lower than the threshold.
-FAST_CHARGE: int = 450 #kW
+FAST_CHARGE: float = 7.5 #kW
 SLOW_THRESHOLD: float = 0.9 #90% of the bus's SOH
 # ABSOLUTE_THRESHOLD = SOH * SLOW_THRESHOLD
-SLOW_CHARGE: int = 60 #kW
+SLOW_CHARGE: float = 1.0 #kW
 
 #The estimated average consumption for a bus to move 1m.
-#   Default is calculated as the average of the given range (0.7, 2.5)kWh/km
-CON_PER_M: int = 0.0016 #kW
+#   The estimated con per m is equal to the average of the given range
+CON_PER_M: tuple[float, float] = (0.0007, 0.0025) #KW, average 0.0016 #kW
 
 """Import variables
 """
@@ -41,6 +41,24 @@ MIDNIGHT: int = 180
 """
 #A list with each charging spot
 CHARGER: list[str] = ['ehvgar']
+
+#A set of the required columns
+REQ_COL: set[str] = set(
+    [
+        'start location', 
+        'end location', 
+        'start time', 
+        'end time', 
+        'activity', 
+        'line', 
+        'bus'
+    ]
+)
+
+#Energy consumption is optional, as our tool can automatically calculate it before verifying.
+OPT_COL: set[str] = set(['energy consumption'])
+
+ACTIVITIES: set[str] = set(['service', 'material', 'charging', 'idle'])
 
 
 print('calculations: defaults.py OK')
