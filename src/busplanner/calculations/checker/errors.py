@@ -70,11 +70,9 @@ def bus_teleport(bus_plan: pd.DataFrame):
         # just want to keep it generic 
         # general idea is that we take a bus then look at only the scedule for THAT bus
 
-
         for i in range(1, len(sorted_plan)):
             prev_row = sorted_plan.iloc[i - 1]
             curr_row = sorted_plan.iloc[i]
-
             # same idea as previous functions, I already mentioned this is a critical finding
 
             if prev_row['end location'] != curr_row['start location']:
@@ -88,6 +86,8 @@ def bus_teleport(bus_plan: pd.DataFrame):
                 })
     # verified with mismatch on rows 37 and 38 of the bus plan, so this function works as intended probably :p
     # also 18 mismatches to maybe relevant to the idling for 1 minute case 
+    if len(location_mismatches) == 0:
+        return True
     return find_bustrip(pd.DataFrame(location_mismatches))
 
 def start_garage(bus_plan: pd.DataFrame):
@@ -109,12 +109,8 @@ def start_garage(bus_plan: pd.DataFrame):
 
     for bus in bus_plan['bus'].unique():  # for every unique bus number
         sorted_plan = bus_plan[bus_plan['bus'] == bus].sort_values(by='start time')
-
-        last_row = sorted_plan.iloc[-1]  # get the last trip for this bus
-        first_row = sorted_plan.iloc[0] # first trip lol 
-
-
-        # run two checks for the first trip and last trip 
+        first_row = sorted_plan.iloc[0]
+        last_row = sorted_plan.iloc[-1]
 
         if first_row['start location'] not in CHARGER:
             garage_issues.append(first_row)
@@ -123,9 +119,11 @@ def start_garage(bus_plan: pd.DataFrame):
 
     # verified against data from the first 3 buses 
 
+    if len(garage_issues) == 0:
+        return True
     return pd.concat(garage_issues)
 
-def check_line_value(bus_plan: pd.DataFrame):
+def Service_line(bus_plan: pd.DataFrame):
     '''
     Checks that every service trip has a non-empty line value.
 
@@ -139,43 +137,27 @@ def check_line_value(bus_plan: pd.DataFrame):
     line_issues : list
         A list of issues with the start time of the trip and the bus number
     '''
-    line_issues = []
-
     filtered = bus_plan[bus_plan['activity'] == 'service trip']
     missing_line = filtered[filtered['line'].isna()] 
-
-    for i in range(len(missing_line)):
-        row = missing_line.iloc[i]
-        line_issues.append(
-            {
-                'bus': row['bus'],
-                'start time': row['start time'],
-            }
-        )
-
-    # no such cases in the original data so can't verify but it does give like 380 values if 
-    # I don't filter by service trip 
-    return line_issues
+    if len(missing_line) == 0:
+        return True
+    return missing_line
 
 def validate_file_type(filename: str):
-    if not filename.endswith(('.xlsx', '.xls', '.csv')):
-        return TypeError(f"'{filename}' is not an excel/csv file. Please insert an excel or csv file.")
+    return True if filename.endswith(('.xlsx', '.xls', '.csv')) else False
+        #TypeError(f"'{filename}' is not an excel/csv file. Please insert an excel or csv file.")
 
 def validate_energy(bus_plan):
-
-    bus_plan = energy_levels(bus_plan) #Change to add battery consumption if necessary
-
+    bus_plan = energy_levels(bus_plan)
     battery_level_errors = []
 
-    for row in range(len(bus_plan)):
-        if bus_plan.iloc[row]['energy_level'] < safety_margin():
-            battery_level_errors.append({
-                'bus': bus_plan.iloc[row]['bus'],
-                'start time': bus_plan.iloc[row]['start time'],
-                'energy_level': bus_plan.iloc[row]['energy_level']
-            })
+    for _, row in bus_plan.iterrows():
+        if row['energy_level'] < safety_margin():
+            print(type(row))
+            battery_level_errors.append(row)
 
-    return battery_level_errors
-
+    if len(battery_level_errors) == 0:
+        return True
+    return pd.concat(battery_level_errors, axis=1).transpose().reset_index(drop=True)
 
 print('checker: errors.py OK')
