@@ -10,9 +10,9 @@ import pandas as pd
 
 ##################
 
-tt = pd.read_excel('GInasfolder/Timetable.xlsx')
-Dist_matrix = pd.read_excel('GInasfolder/DistanceMatrix.xlsx')
-Bus_Plan = pd.read_excel('GInasfolder/Bus Planning.xlsx')
+tt = pd.read_excel('GInasFolder/Timetable.xlsx')
+Dist_matrix = pd.read_excel('GInasFolder/DistanceMatrix.xlsx')
+Bus_Plan = pd.read_excel('GInasFolder/Bus Planning.xlsx')
 
 #  TODO might have to be changed to input from site or something here 
 

@@ -1,5 +1,7 @@
 """Functions regarding KPI calculations
 """
+import sys
+sys.path.append("GinasFolder")
 import pandas as pd
 import ScheduleChecker as sc
 
