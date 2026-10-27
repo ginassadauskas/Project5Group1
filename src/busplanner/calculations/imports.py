@@ -4,6 +4,30 @@ import pandas as pd
 from .defaults import MIDNIGHT
 from .power import powerpertrip
 
+def find_bustrip(incomplete: pd.DataFrame, original: pd.DataFrame, drop: bool=False):
+    """Finds the original dataframe from an incomplete subset.
+
+    This function is used when returning the original trip after processing.
+
+    [incomplete] A subset of a modified dataframe. 
+        It should contain only the neccessary rows and the unmodified columns.
+
+    [original] Is the complete trip database with only import processing.
+
+    [returns] The original version of the trips requested with [incompltete].
+
+    -Modified code. Original by jakevdp & alpha_989
+    https://stackoverflow.com/questions/33282119/pandas-filter-dataframe-by-another-dataframe-by-row-elements
+    """
+    keys = list(incomplete.columns.values)
+    i1 = original.set_index(keys).index
+    i2 = incomplete.set_index(keys).index
+    
+    if drop:
+        return original[i1.isin(i2)].reset_index(drop=drop)
+    else:
+        return original[i1.isin(i2)]
+
 def convert_time_to_minutes(time_column: pd.Series, threshold: int=MIDNIGHT) -> pd.Series:
     '''
     Converts a column of time strings in HH:MM:SS format to minutes
@@ -25,6 +49,14 @@ def convert_time_to_minutes(time_column: pd.Series, threshold: int=MIDNIGHT) -> 
 
     minutes = temp.dt.hour * 60 + temp.dt.minute
     return _adjust_for_midnight(minutes, threshold)
+
+def convert_minutes_to_time(time_column: pd.Series):
+    """Converts a pd.Series from minutes back to time.
+
+    Credit-"user3483203"
+    https://stackoverflow.com/questions/51565978/converting-a-column-of-minutes-to-hours-and-minutes-in-python
+    """
+    return pd.to_datetime(time_column, unit='m').dt.strftime('%H:%M')
 
 def _adjust_for_midnight(time_column: pd.Series, threshold: int=MIDNIGHT) -> pd.Series:
 
@@ -55,7 +87,7 @@ def merge_route_plan(timetable: pd.DataFrame, distance_matrix: pd.DataFrame) -> 
     [returns] the merged file.
     """
     timetable = timetable.copy()
-    distance = distance_matrix.copy()["start", "end", "line"]
+    distance = distance_matrix.copy()[["start", "end", "line"]]
     distance["energy_consumption"] = powerpertrip(distance_matrix["distance_m"])
 
     timetable = timetable.merge(
@@ -68,3 +100,6 @@ def merge_route_plan(timetable: pd.DataFrame, distance_matrix: pd.DataFrame) -> 
     timetable['arrival_time'] = timetable['departure_time']+distance_matrix['max_travel_time']    
 
     return timetable
+
+
+print('calculations: imports.py OK')
