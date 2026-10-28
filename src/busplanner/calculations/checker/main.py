@@ -35,11 +35,11 @@ def import_checks(filepath: str) -> tuple[bool, pd.DataFrame | str]:
         bus_plan = pd.read_excel(filepath)
         missing_bus_plan_columns = e.validate_columns(bus_plan)
         if missing_bus_plan_columns == True:
-            bus_plan = import_bus_plan(bus_plan)
+            return (True, import_bus_plan(bus_plan))
         else: 
-            return (False, missing_bus_plan_columns)
+            return (False, missing_bus_plan_columns) #set
     else:
-        return (False, filepath)
+        return (False, filepath) #str
 
 def verify_bus(bus_plan: pd.DataFrame):
     """Checks for any mistakes in the bus_plan

@@ -30,7 +30,7 @@ SLOW_CHARGE: float = 1.0 #kW
 
 #The estimated average consumption for a bus to move 1m.
 #   The estimated con per m is equal to the average of the given range
-CON_PER_M: tuple[float, float] = (0.0007, 0.0025) #KW, average 0.0016 #kW
+CON_PER_M: tuple[float, float] = (0.0007, 0.0025) #kW, average 0.0016 #kW
 
 """Import variables
 """
