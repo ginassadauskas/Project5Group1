@@ -46,6 +46,28 @@ def overlaps(bus_plan: pd.DataFrame, drop: bool=False) -> pd.DataFrame | bool:
         with_.rename(columns = lambda x : str(x)[:-2])
         return find_bustrip(duplicate, bus_plan, drop=drop), find_bustrip(with_, bus_plan, drop=drop)
 
+def gaps(bus_plan: pd.DataFrame):
+    '''
+    Checks for gaps in the bus plan where a bus has a gap/overlap between its end time and the next start time.
+
+    Parameters:
+    ---------
+    bus_plan : pd.DataFrame
+        A pandas DataFrame containing the bus plan with columns for at least 'start time', 'end time', and 'bus'.
+
+    Returns:
+    ---------
+    gap_data : list
+        A list of dictionaries containing information about gaps or overlaps for each bus, including the bus identifier, gap time, previous end time, and current start time.
+    '''
+    bus_plan = bus_plan.copy()
+    bus_plan['end time'] = bus_plan.groupby('bus')['end time'].shift(1)
+    bus_plan['end time'] = bus_plan['end time'].fillna(
+        bus_plan['start time'].iloc[0])
+    bus_plan['gap'] = bus_plan['start time'] - bus_plan['end time']
+    bus_plan = bus_plan[bus_plan['gap'] != 0]
+    return True if len(bus_plan) == 0 else bus_plan
+
 def bus_teleport(bus_plan: pd.DataFrame) -> pd.DataFrame | bool: 
     '''
     Checks if the start location of a buses next trip matches the end location of its previous trip.
@@ -89,39 +111,6 @@ def bus_teleport(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     if len(location_mismatches) == 0:
         return True
     return find_bustrip(pd.DataFrame(location_mismatches))
-
-def start_garage(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
-    '''
-    Checks if the first and last location of the whole schedule for each bus is the garage
-
-    Parameters:
-    ---------
-    bus_plan : pd.DataFrame
-        A pandas DataFrame containing the bus plan with columns for at least 'end location' 'start location' and 'bus'.
-
-    Returns:
-    ---------
-    garage_issues : pd.DataFrame
-        Each entry with a bus that has a starting or ending location not in an available garage.
-    '''
-
-    garage_issues = []  # pretty much same with the template 
-
-    for bus in bus_plan['bus'].unique():  # for every unique bus number
-        sorted_plan = bus_plan[bus_plan['bus'] == bus].sort_values(by='start time')
-        first_row = sorted_plan.iloc[0]
-        last_row = sorted_plan.iloc[-1]
-
-        if first_row['start location'] not in CHARGER:
-            garage_issues.append(first_row)
-        if last_row['end location'] not in CHARGER:
-            garage_issues.append(last_row)
-
-    # verified against data from the first 3 buses 
-
-    if len(garage_issues) == 0:
-        return True
-    return pd.concat(garage_issues)
 
 def service_line(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     '''
@@ -181,12 +170,23 @@ def validate_line_numbers(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame)
     unknown_lines = (set(bus_plan['line'])) - set(distance_matrix['line'])
     return True if len(unknown_lines) == 0 else unknown_lines
 
-def duplicate_bus(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
-    """Finds rows where a bus takes more than one trip at the same time
+def all_service_ran(bus_plan: pd.DataFrame, merged: pd.DataFrame) -> pd.DataFrame | bool:
+    """Confirms that all required service trips have indeed been ran by a bus.
+
+    [bus_plan] a completed bus plan
+    [merged] The timetable or timetable merged with the distance matrix.
+
+    [returns] A set containing tuples with the time, starting location, and line of the missing trips.
+        Or True if there are no missing trips.
     """
-    bus_plan = bus_plan.copy().sort_values(["bus", "start time"])
-    bus_plan["end time"] = bus_plan.groupby("bus")["end time"].shift(1)
-    overlaps = bus_plan[bus_plan["start time"] < bus_plan["end time"]]
-    return True if len(overlaps) == 0 else overlaps
+    bus_plan = bus_plan.copy()[['start location', 'start time', 'line']]
+    service_trips = merged.copy()[
+        ['start', 'departure', 'line']].rename(
+            columns={'start': 'start location', 'departure': 'start time'})
+
+    missing = service_trips.merge(bus_plan, how="left", indicator=True)
+    missing = missing[missing["_merge"] == "left_only"].drop(columns="_merge")
+
+    return True if len(missing) == 0 else missing
 
 print('checker: errors.py OK')
