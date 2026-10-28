@@ -15,11 +15,11 @@ src/busplanner/calculations/checker/errorenums.py
 src/busplanner/calculations/checker/errors.py
 src/busplanner/calculations/checker/imports.py
 src/busplanner/calculations/checker/main.py
-src/busplanner/calculations/checker/test.py
 src/busplanner/calculations/checker/warning.py
 src/busplanner/calculations/grade/__init__.py
 src/busplanner/calculations/grade/kpi.py
 src/busplanner/calculations/grade/trips.py
+src/busplanner/calculations/improver/main.py
 src/busplanner/website/__init__.py
 src/busplanner/website/check.py
 src/busplanner/website/comparison.py
@@ -27,4 +27,5 @@ src/busplanner/website/dataclean.py
 src/busplanner/website/main.py
 src/busplanner/website/optimize.py
 src/busplanner/website/results.py
+src/busplanner/website/tutorial.py
 src/busplanner/website/upload.py

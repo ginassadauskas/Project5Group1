@@ -1,5 +1,13 @@
 """KPI calculations related to the current schedule
 """
+
+
+## !
+import pandas as pd  # TODO use the proper import path
+## !
+
+
+
 def kpi(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, 
                   distance_matrix: pd.DataFrame, bus: int=1, time: int=1,
                   in_minutes: bool | None=False) -> float:
