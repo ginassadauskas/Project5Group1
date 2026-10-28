@@ -23,8 +23,8 @@ def upload_display():
         "Upload the distance matrix and the timetable to build the schedule."
     )
 
-    st.session_state.pop("uploaded_file", None)
-
+    # Keep file uploader values in local variables; do not overwrite the widget-managed
+    # keys in st.session_state with the same names.
     distance_matrix_file = st.file_uploader(
         "Upload distance matrix",
         type=["xlsx", "csv"],
@@ -38,9 +38,6 @@ def upload_display():
     )
 
     if distance_matrix_file is not None and time_table_file is not None:
-        st.session_state["distance_matrix_file"] = distance_matrix_file
-        st.session_state["time_table_file"] = time_table_file
-
         distance_matrix = load_data(distance_matrix_file)
         time_table = load_data(time_table_file)
 

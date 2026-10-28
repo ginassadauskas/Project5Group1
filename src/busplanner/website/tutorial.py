@@ -24,12 +24,9 @@ def tutorial_dialog():
 
 
 def show_tutorial():
-    """Open a simple welcome popup the first time the app is loaded."""
+    """Open the popup only on the first run of the app."""
     if "tutorial_seen" not in st.session_state:
-        st.session_state["tutorial_seen"] = False
-
-    if not st.session_state["tutorial_seen"]:
-        tutorial_dialog()
+        st.session_state["tutorial_seen"] = True
 
 
 def tutorial_button():
@@ -37,7 +34,6 @@ def tutorial_button():
     st.write("Made by Team 1 - Fontys University of Applied Sciences")
     st.write("Emily, Casper, & Ginas")
     if st.sidebar.button("Open tutorial"):
-        st.session_state["tutorial_seen"] = False
         tutorial_dialog()
 
 

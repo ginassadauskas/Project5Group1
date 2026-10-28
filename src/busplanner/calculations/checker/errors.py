@@ -101,7 +101,7 @@ def bus_teleport(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
                 location_mismatches.append({
                     'bus': bus,
                     'end location': prev_row['end location'],
-                    'start_location': curr_row['start location'],
+                    'start location': curr_row['start location'],
                     'start time': curr_row['start time'],
                     'end time': curr_row['end time'],
                     # I think time is relevant for the client to check for issues
@@ -110,7 +110,7 @@ def bus_teleport(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     # also 18 mismatches to maybe relevant to the idling for 1 minute case 
     if len(location_mismatches) == 0:
         return True
-    return find_bustrip(pd.DataFrame(location_mismatches))
+    return find_bustrip(pd.DataFrame(location_mismatches), bus_plan)
 
 def service_line(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     '''
@@ -188,5 +188,12 @@ def all_service_ran(bus_plan: pd.DataFrame, merged: pd.DataFrame) -> pd.DataFram
     missing = missing[missing["_merge"] == "left_only"].drop(columns="_merge")
 
     return True if len(missing) == 0 else missing
+
+def has_issue(result):
+    if result is True:
+        return False
+    if result is False:
+        return True
+    return len(result) > 0
 
 print('checker: errors.py OK')
