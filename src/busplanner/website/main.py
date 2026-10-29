@@ -38,7 +38,6 @@ step = st.radio(
     [
         "Upload",
         "Check",
-        "Clean",
         "Optimize",
         "Results",
         "Comparison"
@@ -56,14 +55,6 @@ match step:
 
     case "Check":
         check_data_display()
-
-
-
-    case "Clean":
-
-        # call functions from clean.py
-        pass
-
 
     case "Optimize":
 

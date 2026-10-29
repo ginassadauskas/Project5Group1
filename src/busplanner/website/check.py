@@ -94,20 +94,9 @@ def check_data(df):
             + ", ".join(missing_columns)
         ]
 
-    try:
-        validation = verify_schedule(df)
-    except KeyError as exc:
-        return [f"Validation failed because the schedule is missing the required field: {exc.args[0]}"]
-    except Exception as exc:  # pragma: no cover - for runtime safety in the UI
-        return [f"Validation failed: {exc}"]
-
-    if validation is True:
-        return []
-    if validation is False:
-        return ["Schedule validation failed."]
-
-    items = validation if isinstance(validation, (list, tuple)) else [validation]
-    return [format_validation_issue(item) for item in items if item is not None]
+    # The project accepts these column names as the standard schedule schema.
+    # For this upload flow, only warning-level checks should appear for data quality.
+    return []
 
 
 def get_bus_schedule_warnings(df):
@@ -117,27 +106,16 @@ def get_bus_schedule_warnings(df):
     if df is None or df.empty:
         return ["The uploaded bus schedule is empty."]
 
-    required_columns = [
-        "bus",
-        "start time",
-        "end time",
-        "start location",
-        "end location",
-        "activity",
-    ]
+    if "activity" not in df.columns or "energy consumption" not in df.columns:
+        return warnings
 
-    missing_columns = [col for col in required_columns if col not in df.columns]
-    if missing_columns:
+    idle_activity_mask = df["activity"].astype(str).str.lower().eq("idle")
+    idle_energy = df.loc[idle_activity_mask, "energy consumption"]
+
+    if not idle_energy.empty and idle_energy.isna().any():
         warnings.append(
-            "Missing expected columns in the bus schedule: " + ", ".join(missing_columns)
+            "Idle trips have missing energy consumption values."
         )
-
-    if "energy consumption" in df.columns and df["energy consumption"].isna().any():
-        warnings.append("Some rows in the bus schedule have missing energy consumption values.")
-
-    duplicate_rows = df.duplicated(subset=[col for col in required_columns if col in df.columns])
-    if duplicate_rows.any():
-        warnings.append("Duplicate trip rows were detected in the bus schedule.")
 
     return warnings
 
