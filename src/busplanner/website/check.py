@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from busplanner.calculations.imports import convert_time_to_minutes
+from busplanner.calculations.checker.imports import convert_time_to_minutes
 from busplanner.calculations.main import verify_schedule
 from busplanner.calculations.defaults import REQ_COL
 
