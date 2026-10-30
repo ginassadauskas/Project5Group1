@@ -70,4 +70,5 @@ def plot_gantt(df, save_path=None):
 
     return fig
 
-plot_gantt(df_schedule)
+
+
