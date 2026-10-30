@@ -51,12 +51,12 @@ REQ_COL: set[str] = set(
         'end time', 
         'activity', 
         'line', 
-        'bus'
+        'bus',
+        'energy consumption'
     ]
 )
 
 #Energy consumption is optional, as our tool can automatically calculate it before verifying.
-OPT_COL: set[str] = set(['energy consumption'])
 
 ACTIVITIES: set[str] = set(['service', 'material', 'charging', 'idle'])
 
