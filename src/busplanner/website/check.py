@@ -3,6 +3,7 @@ import pandas as pd
 
 from busplanner.calculations.imports import convert_time_to_minutes
 from busplanner.calculations.main import verify_schedule
+from busplanner.calculations.defaults import REQ_COL
 
 
 def normalize_bus_schedule(df):
@@ -47,47 +48,37 @@ def format_validation_issue(item):
     """Convert raw checker output into a short user-facing issue describing row/column locations."""
     if item is True:
         return "No validation issues found."
-    if item is False:
+    elif item is False:
         return "Validation failed."
 
-    if isinstance(item, pd.Series):
+    elif isinstance(item, pd.Series):
         rows = [int(row) for row in item.index if row is not None]
         if not rows:
             return f"Validation issue in column '{item.name}'."
         return f"Validation issue in rows {rows[:10]} (column: {item.name})."
 
-    if isinstance(item, pd.DataFrame):
+    elif isinstance(item, pd.DataFrame):
         rows = [int(row) for row in item.index if row is not None]
         columns = list(item.columns)
         if not rows:
             return f"Validation issue in columns: {columns}."
         return f"Validation issue in rows {rows[:10]} and columns {columns}."
 
-    if isinstance(item, (list, tuple)):
+    elif isinstance(item, (list, tuple)):
         return "; ".join(format_validation_issue(part) for part in item)
-
-    return str(item)
+    else:
+        return str(item)
 
 
 def check_data(df):
     """Run the project validator and return a list of issues if any."""
-    required_columns = [
-        "bus",
-        "start time",
-        "end time",
-        "start location",
-        "end location",
-        "activity",
-        "line",
-        "energy consumption",
-    ]
 
     if df is None or not isinstance(df, pd.DataFrame):
         return ["The uploaded schedule is not a valid DataFrame."]
 
     df = normalize_bus_schedule(df)
 
-    missing_columns = [col for col in required_columns if col not in df.columns]
+    missing_columns = [col for col in REQ_COL if col not in df.columns]
     if missing_columns:
         return [
             "The uploaded schedule is missing required columns: "
@@ -110,23 +101,14 @@ def check_data(df):
     return [format_validation_issue(item) for item in items if item is not None]
 
 
-def get_bus_schedule_warnings(df):
+def get_bus_schedule_warnings(df: pd.DataFrame):
     """Return warning messages for uploaded bus schedule data."""
     warnings = []
 
     if df is None or df.empty:
         return ["The uploaded bus schedule is empty."]
 
-    required_columns = [
-        "bus",
-        "start time",
-        "end time",
-        "start location",
-        "end location",
-        "activity",
-    ]
-
-    missing_columns = [col for col in required_columns if col not in df.columns]
+    missing_columns = [col for col in REQ_COL if col not in df.columns]
     if missing_columns:
         warnings.append(
             "Missing expected columns in the bus schedule: " + ", ".join(missing_columns)
@@ -135,7 +117,7 @@ def get_bus_schedule_warnings(df):
     if "energy consumption" in df.columns and df["energy consumption"].isna().any():
         warnings.append("Some rows in the bus schedule have missing energy consumption values.")
 
-    duplicate_rows = df.duplicated(subset=[col for col in required_columns if col in df.columns])
+    duplicate_rows = df.duplicated(subset=[col for col in REQ_COL if col in df.columns])
     if duplicate_rows.any():
         warnings.append("Duplicate trip rows were detected in the bus schedule.")
 
