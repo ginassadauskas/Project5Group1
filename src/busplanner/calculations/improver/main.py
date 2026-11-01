@@ -32,7 +32,7 @@ TARGET = d.SLOW_THRESHOLD * Q
 
 ###           ###
 
-def load_trips(timetable, distance_matrix):
+def load_trips(timetable, distance_matrix): # helper function 
     trips = merge_route_plan(timetable, distance_matrix)
     travel = distance_matrix[['start', 'end', 'line', 'max_travel_time']]
     trips = trips.drop(columns='arrival_time').merge(travel, on=['start', 'end', 'line'], how='left')
@@ -42,13 +42,13 @@ def load_trips(timetable, distance_matrix):
     trips.reset_index(drop=True, inplace=True)
     return trips
 
-tt = pd.read_excel(DATA / "Timetable.xlsx")
-dm = pd.read_excel(DATA / "DistanceMatrix.xlsx")
+tt = pd.read_excel(DATA / "Timetable.xlsx") # change to step 1
+dm = pd.read_excel(DATA / "DistanceMatrix.xlsx") # change to step 1
 
 trips = load_trips(tt,dm)
 remaining_service = trips.to_dict('records')
 
-def load_deadhead(dm):
+def load_deadhead(dm): 
     """
     Load the deadhead travel time and energy consumption between all pairs of locations from the distance matrix.
 

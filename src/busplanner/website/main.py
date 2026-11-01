@@ -67,18 +67,9 @@ match step:
         # call functions from results.py
         pass
 
-    case "Comparison":
-        
-        # call functions from comparison.py
-        pass
-
 
     case "Optimize":
         # call functions from optimize.py
-        pass
-
-    case "Results":
-        # call functions from results.py
         pass
 
     case "Comparison":

@@ -61,7 +61,7 @@ def upload_display():
 
         st.write("Merged preview")
         st.dataframe(
-            merged_schedule.head(20),
+            merged_schedule,
             use_container_width=True
         )
     elif distance_matrix_file is not None or time_table_file is not None:
