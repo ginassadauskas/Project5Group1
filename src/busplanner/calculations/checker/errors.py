@@ -60,7 +60,7 @@ def gaps(bus_plan: pd.DataFrame):
     gap_data : list
         A list of dictionaries containing information about gaps or overlaps for each bus, including the bus identifier, gap time, previous end time, and current start time.
     '''
-    bus_plan = bus_plan.copy()
+    bus_plan = bus_plan.copy().sort_values(by='bus')
     bus_plan['end time'] = bus_plan.groupby('bus')['end time'].shift(1)
     bus_plan['end time'] = bus_plan['end time'].fillna(
         bus_plan['start time'].iloc[0])
@@ -110,7 +110,7 @@ def bus_teleport(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     # also 18 mismatches to maybe relevant to the idling for 1 minute case 
     if len(location_mismatches) == 0:
         return True
-    return find_bustrip(pd.DataFrame(location_mismatches), bus_plan)
+    return location_mismatches
 
 def service_line(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
     '''
@@ -133,7 +133,7 @@ def service_line(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
 # check if there are any activities that are empty
 def activity_none_empty(bus_plan: pd.DataFrame) -> set | bool:
     empty_mask = bus_plan['activity'].isnull()
-    return True if len(empty_mask) == 0 else empty_mask
+    return True if empty_mask.isin([False]).all() else empty_mask
 
 def validate_file_type(filename: str) -> bool:
     return True if filename.endswith(('.xlsx', '.xls', '.csv')) else False
@@ -147,12 +147,11 @@ def validate_energy(bus_plan) -> pd.DataFrame | bool:
 
     for _, row in bus_plan.iterrows():
         if row['energy_level'] < safety_margin():
-            print(type(row))
             battery_level_errors.append(row)
 
     if len(battery_level_errors) == 0:
         return True
-    return pd.concat(battery_level_errors, axis=1).transpose().reset_index(drop=True)
+    return pd.concat(battery_level_errors, axis=1).transpose()
 
 def validate_locations(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame) -> set | bool:
     unknown_locations = (set(bus_plan['start location']) + set(bus_plan['end location'])) - set(distance_matrix['start'])

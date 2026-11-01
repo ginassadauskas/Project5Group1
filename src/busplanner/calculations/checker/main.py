@@ -69,7 +69,22 @@ def verify_bus(bus_plan: pd.DataFrame):
     if not any(errors):
         return True
 
-    return [check for check, has_error in zip(checks, errors) if has_error]
+    # Return all error messages as one list
+    #   leaving out any would-be empty lists.
+    errormsg = []
+
+    if errors[0]:
+        errormsg.extend(ee.error_activity_none_empty(checks[0]))
+    if errors[1]:
+        errormsg.extend(ee.error_validate_activities(checks[1]))
+    if errors[2]:
+        errormsg.extend(ee.error_service_line(checks[2]))
+    if errors[3]:
+        errormsg.extend(ee.error_gaps(checks[3]))
+    if errors[4]:
+        errormsg.extend(ee.error_bus_teleport(checks[4]))
+
+    return errormsg
 
 def verify_critical(bus_plan: pd.DataFrame, 
                     distance_matrix: pd.DataFrame, 
@@ -95,7 +110,18 @@ def verify_critical(bus_plan: pd.DataFrame,
     if not any(errors):
         return True
 
-    return [check for check, has_error in zip(checks, errors) if has_error]
+    # Return all error messages as one list
+    #   leaving out any would-be empty lists.
+    errormsg = []
+
+    if errors[0]:
+        errormsg.extend(ee.error_all_service_ran(checks[0]))
+    if errors[1]:
+        errormsg.extend(ee.error_validate_locations(checks[1]))
+    if errors[2]:
+        errormsg.extend(ee.error_validate_line_numbers(checks[2]))
+
+    return errormsg
 
 def verify_schedule(bus_plan_file: str | pd.DataFrame) -> list[Any] | bool:
     """Verifies the full bus_plan.

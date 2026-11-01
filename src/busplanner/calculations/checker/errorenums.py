@@ -1,9 +1,62 @@
 from typing import Any
+import pandas as pd
 
-#def isvalid(errors: Any) Any | bool:
-#    """Returns True if there are no errors.
-#    """
-#    return True if len(errors) == 0 else errors
+## verify_bus()
+def error_activity_none_empty(errorlines: pd.DataFrame):
+    ers = []
+
+    for index, haserror in errorlines.iterrows():
+        if haserror:
+            ers.append(f'Bus found without an activity at index {index}')
+
+    return ers
+
+        
+def error_validate_activities(errorlines: set):
+    ers = []
+
+    for activity in errorlines:
+        ers.append(f'Unknown activity {activity}')
+
+    return ers
+
+
+def error_service_line(errorlines: pd.DataFrame):
+    ers = []
+
+    for index, row in errorlines:
+        ers.append(f'A bus at index {index} is running a service trip without a line.')
+
+    return ers
+
+def error_gaps(errorlines: pd.DataFrame):
+    ers = []
+    prev_index = 0
+
+    for index, row in errorlines:
+        ers.append(f'''Bus {row['bus']} start ({row['start time']}) and previous end 
+                   ({row['end times']}) times do not match. (Line {index} and {prev_index})''')
+        prev_index = index
+
+    return ers
+
+def error_bus_teleport(errorlines: list[dict]):
+    ers = []
+
+    for error in errorlines:
+        ers.append(f'Bus {error['bus']} starts its activity of {error['start time']} at location {error['start location']}, but ended its last activity in {error["end location"]}.')
+
+    return ers
+
+def error_all_service_ran(errorlines):
+    pass
+
+def error_validate_locations(errorlines):
+    pass
+
+def error_validate_line_numbers(errorlines):
+    pass
+
 
 class BusScheduleError(Exception):
     """Base class for every error this validator can raise."""

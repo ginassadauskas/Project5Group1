@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 
+<<<<<<< HEAD
 # This file is the UI layer for the schedule validation step.
 # It uses two libraries:
 # - pandas for reading Excel/CSV data and manipulating DataFrames
@@ -8,6 +9,9 @@ import pandas as pd
 # The custom project function convert_time_to_minutes is used to normalize time strings
 # into minute integers before checking the schedule.
 from busplanner.calculations.imports import convert_time_to_minutes
+=======
+from busplanner.calculations.checker.imports import convert_time_to_minutes
+>>>>>>> 5c6babc459cf3535dc4a56938574c50e793f9d52
 from busplanner.calculations.main import verify_schedule
 from busplanner.calculations.defaults import REQ_COL
 

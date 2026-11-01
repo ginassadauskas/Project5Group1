@@ -1,7 +1,4 @@
 ### IMPORTS
-from busplanner.calculations.grade import kpi 
-from busplanner.calculations.imports import convert_time_to_minutes
-from busplanner.calculations.imports import merge_route_plan
 import math
 import pandas as pd
 
@@ -13,9 +10,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 DATA = ROOT / "GInasFolder"
 
-# TEMP 
-
-###
 
 ### CONSTANTS ###
 
@@ -32,21 +26,27 @@ TARGET = d.SLOW_THRESHOLD * Q
 
 ###           ###
 
+<<<<<<< HEAD
 def load_trips(timetable, distance_matrix): # helper function 
     trips = merge_route_plan(timetable, distance_matrix)
+=======
+def prepare_trips(merged, distance_matrix):
+>>>>>>> 5c6babc459cf3535dc4a56938574c50e793f9d52
     travel = distance_matrix[['start', 'end', 'line', 'max_travel_time']]
-    trips = trips.drop(columns='arrival_time').merge(travel, on=['start', 'end', 'line'], how='left')
+    trips = merged.drop(columns=['arrival_time', 'Unnamed: 0'], errors='ignore')
+    trips = trips.merge(travel, on=['start', 'end', 'line'], how='left')
     trips['arrival_time'] = trips['departure_time'] + trips['max_travel_time']
     trips['energy'] = trips['energy_consumption']
-    trips.sort_values(by='departure_time', inplace=True)
-    trips.reset_index(drop=True, inplace=True)
-    return trips
+    return trips.sort_values('departure_time').reset_index(drop=True)
 
+<<<<<<< HEAD
 tt = pd.read_excel(DATA / "Timetable.xlsx") # change to step 1
 dm = pd.read_excel(DATA / "DistanceMatrix.xlsx") # change to step 1
 
 trips = load_trips(tt,dm)
 remaining_service = trips.to_dict('records')
+=======
+>>>>>>> 5c6babc459cf3535dc4a56938574c50e793f9d52
 
 def load_deadhead(dm): 
     """
@@ -74,8 +74,6 @@ def deadhead(dh, start, end):
     if start == end:
         return (0, 0.0)          # already there: no minutes, no energy
     return dh[(start, end)]
-
-dh = load_deadhead(dm) #deadhead lookup 
 
 def find_next_trip(remaining,dh, loc, t, charge): 
     '''
@@ -234,14 +232,14 @@ def go_home(dh, loc, t, charge, rows, bus):
         loc = GARAGE
     return loc, t, charge
 
-def build_bus(bus, remaining):
+def build_bus(bus, remaining, dh, start_charge):
     """
     Build a schedule for a single bus based on the remaining trips and the deadhead lookup table. With all the 
     constraints in mind
     """
 
     # INIT
-    loc, t, charge = GARAGE, 0, Q
+    loc, t, charge = GARAGE, 0, start_charge
     rows = []
 
 
@@ -262,34 +260,58 @@ def build_bus(bus, remaining):
             t, charge = charge_bus(t, charge, TARGET, CHARGE_RATE, rows, bus)
     return rows
 
-def build_schedule(remaining):
+def build_schedule(remaining, dh, start_charge):
     """
     Build a schedule for all buses based on the remaining trips and the deadhead lookup table.
     """
     all_rows = []
     bus = 1 # must be at least 1 bus 
     while remaining: # if there are still trips left to assign, keep building buses
-        rows = build_bus(bus, remaining)
+        rows = build_bus(bus, remaining, dh, start_charge)
         if not rows:
             break
         all_rows.extend(rows) # extend the list of all rows with the rows for the current bus that are possible
         bus += 1
     return pd.DataFrame(all_rows)
 
-    remaining_service = trips.to_dict('records')
 
+# helper for if it's a csv or excel file, or a dataframe already
 
-# BUILD THE ACTUAL SCHEDULE
-built_schedule = build_schedule(remaining_service)
+def read_table(source):
+       if isinstance(source, pd.DataFrame):
+           return source
+       source = Path(source)
+       if source.suffix == '.csv':
+           return pd.read_csv(source)
+       return pd.read_excel(source)
 
+####
 
-# below is the final dataframe here that can actually be integrated
+#####
 
-df_schedule = pd.DataFrame(built_schedule)
-df_schedule['energy consumption'] = -df_schedule['energy consumption']
+# MAIN FUNCTION THAT BUILDS THE SCHEDULE FOR ALL BUSES
 
+def optimise_schedule(merged, distance_matrix, start_soc=1.0):
+    """
+        Input:
+
+        merged: output of merge_route_plan (DataFrame or .csv/.xlsx path).
+
+        distance_matrix: the uploaded distance matrix. start_soc: 0 to 1. (default is 1)
+
+        Returns the bus plan as a DataFrame (times in minutes)."""
+    merged = read_table(merged)
+    dm = read_table(distance_matrix)
+    trips = prepare_trips(merged, dm)
+    dh = load_deadhead(dm)
+    remaining = trips.to_dict('records')
+    schedule = build_schedule(remaining, dh, start_soc * Q)
+    schedule['energy consumption'] = -schedule['energy consumption']
+    return schedule
 
 ### 
+
+######
 
 ## AI USAGE ##
 

@@ -87,7 +87,7 @@ def merge_route_plan(timetable: pd.DataFrame, distance_matrix: pd.DataFrame) -> 
     [returns] the merged file.
     """
     timetable = timetable.copy()
-    distance = distance_matrix.copy()[["start", "end", "line"]]
+    distance = distance_matrix.copy()[["start", "end", "line", "max_travel_time"]]  
     distance["energy_consumption"] = powerpertrip(distance_matrix["distance_m"])
 
     timetable = timetable.merge(
@@ -97,8 +97,8 @@ def merge_route_plan(timetable: pd.DataFrame, distance_matrix: pd.DataFrame) -> 
     )
 
     timetable["departure_time"] = convert_time_to_minutes(timetable["departure_time"])
-    timetable['arrival_time'] = timetable['departure_time']+distance_matrix['max_travel_time']    
-
+    timetable['arrival_time'] = timetable['departure_time'] + timetable['max_travel_time']   # edit: distance_matrix -> timetable
+    timetable = timetable.drop(columns='max_travel_time')      
     return timetable
 
 
