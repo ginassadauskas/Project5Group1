@@ -48,14 +48,29 @@ def error_bus_teleport(errorlines: list[dict]):
 
     return ers
 
-def error_all_service_ran(errorlines):
-    pass
+def error_all_service_ran(errorlines: pd.DataFrame):
+    ers = []
 
-def error_validate_locations(errorlines):
-    pass
+    for _, error in errorlines.iterrows():
+        ers.append(f'No bus rides the service trip that was supposed to start at {error['start time']} and line {error['line']}.')
+
+    return ers
+
+def error_validate_locations(errorlines: set):
+    ers = []
+
+    for error in errorlines:
+        ers.append(f'Location {error} is not known in the distance matrix.')
+
+    return ers
 
 def error_validate_line_numbers(errorlines):
-    pass
+    ers = []
+
+    for error in errorlines:
+        ers.append(f'Line {error} is not known in the distance matrix')
+
+    return ers
 
 
 class BusScheduleError(Exception):
