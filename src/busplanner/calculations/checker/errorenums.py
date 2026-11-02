@@ -72,6 +72,30 @@ def error_validate_line_numbers(errorlines):
 
     return ers
 
+def error_validate_energy(errorlines: pd.DataFrame):
+    ers = []
+
+    for index, error in errorlines.iterrows():
+        ers.append(f'Bus {error['bus']} runs out of charge at line {index}.')
+
+    return ers
+
+
+def warning_start_garage(errorlines: pd.DataFrame):
+    ers = []
+
+    for index, error in errorlines.iterrows():
+        ers.append(f'Bus {error['bus']} does not start or end in a garage.')
+
+    return ers
+
+def warning_correct_consumption(errorlines: pd.DataFrame):
+    ers = []
+
+    for index, error in errorlines.iterrows():
+        ers.append(f'Bus activity in row {index} has an incorrect energy consumption. It should range between {error['min battery']} and {error['max battery']} kWh')
+
+    return ers
 
 class BusScheduleError(Exception):
     """Base class for every error this validator can raise."""
