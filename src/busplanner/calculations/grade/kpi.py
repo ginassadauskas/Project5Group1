@@ -1,16 +1,13 @@
 """KPI calculations related to the current schedule
 """
-
-
-## !
-import pandas as pd  # TODO use the proper import path
-## !
-
+from busplanner.calculations.grade import trips as t
+from busplanner.calculations.imports import merge_route_plan
+from busplanner.calculations.power import powerpertrip
+import pandas as pd
 
 
 def kpi(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, 
-                  distance_matrix: pd.DataFrame, bus: int=1, time: int=1,
-                  in_minutes: bool | None=False) -> float:
+                  distance_matrix: pd.DataFrame) -> float:
     """Calculates the KPI of a given schedule.
 
     [schedule] A completed, verified schedule the KPI will score.
@@ -20,32 +17,13 @@ def kpi(schedule: pd.DataFrame, req_bus_line: pd.DataFrame,
 
     [returns] The kpi, ranging between 0 and 1.
     """
-    #if time_table2 is not None:
-    #    time_table == merge_timedistance(time_table, time_table2)
+    min_bus_score = bus_ratio(schedule, req_bus_line, distance_matrix)
+    battery = efficiency(schedule, merge_route_plan(req_bus_line, distance_matrix))
 
-    min_bus_score = bus*bus_ratio(schedule, req_bus_line, distance_matrix)
-    battery = time*trip_ratio(schedule, trip_duration=in_minutes)
-
-    return min_bus_score + battery
-
-
-def trip_ratio(schedule: pd.DataFrame, trip_duration: bool | None=None) -> float:
-    """Calculates the ratio of service and non-service trips.
-
-    [schedule] The bus schedule, with or without the trip times in minutes.
-    [trip time] Default None. 
-        If true, the trip duration column has not been made and times are in minutes.
-        If false, the the trip duration column has not been made and times are in hh:mm
-        If None, the trip duration column has already been calculated
-    """
-    schedule = schedule.copy()
-
-    if trip_duration is not None:
-        schedule = trip_time(schedule, trip_duration)
-
-    all_times = schedule.groupby('activity').sum()['trip duration']
-    return float(1 - (all_times.sum() - all_times['service trip'])/all_times.sum())
-
+    # Battery only acts as a tiebreaker
+    # The maximum KPI == 1.
+    
+    return (min_bus_score + 0.1 * battery) / 1.1
 
 def simulbus(merged: pd.DataFrame, time: int):
      """Counts the number of buses that need to be active at the given time.
@@ -62,9 +40,9 @@ def minimum_bus(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> in
      merged = merge_route_plan(req_bus_line, distance_matrix)
      
      for minute in range(
-         earliest_service(req_bus_line), 
-         latest_service(req_bus_line, distance_matrix), 
-         min_service_time(distance_matrix)
+         t.earliest_service(req_bus_line), 
+         t.latest_service(req_bus_line, distance_matrix), 
+         t.min_service_time(distance_matrix)
      ):  
         
         bus_need = simulbus(merged, minute)
@@ -91,5 +69,12 @@ def bus_ratio(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, distance_matri
      """
      return count_buses(schedule) / minimum_bus(req_bus_line, distance_matrix)
 
+def efficiency(schedule: pd.DataFrame, merged: pd.DataFrame):
+     # clip sets all negative values to 0, removing capacity gained from charging.
+     # Therefor, we onlly include (theoretical minimum) the energy consumed.
+     merged = sum(merged.clip(lower=0)['energy_consumption']) 
+     schedule = sum(schedule.clip(lower=0)['energy consumption'])
+
+     return merged / schedule
 
 print('grade: kpi.py OK')
