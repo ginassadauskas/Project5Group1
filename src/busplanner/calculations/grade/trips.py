@@ -3,7 +3,7 @@
 """
 import pandas as pd
 
-def trip_time(schedule: pd.DataFrame, in_minutes: bool=False) -> pd.DataFrame:
+def trip_time(schedule: pd.DataFrame) -> pd.DataFrame:
     """Calculates how much time was spend on each trip
 
     [schedule] a completed bus schedule.
@@ -11,9 +11,6 @@ def trip_time(schedule: pd.DataFrame, in_minutes: bool=False) -> pd.DataFrame:
     [returns] a copy of the schudule with the times of each trip appended as a column
     """
     schedule = schedule.copy()
-    if in_minutes is False:
-        schedule = sc.adjust_time(schedule)
-
     schedule['trip duration'] = schedule['end time'] - schedule['start time']
     return schedule
 
