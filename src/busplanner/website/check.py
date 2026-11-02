@@ -1,17 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-<<<<<<< HEAD
-# This file is the UI layer for the schedule validation step.
-# It uses two libraries:
-# - pandas for reading Excel/CSV data and manipulating DataFrames
-# - streamlit for the page layout, file upload widgets, and user feedback
-# The custom project function convert_time_to_minutes is used to normalize time strings
-# into minute integers before checking the schedule.
-from busplanner.calculations.imports import convert_time_to_minutes
-=======
 from busplanner.calculations.checker.imports import convert_time_to_minutes
->>>>>>> 5c6babc459cf3535dc4a56938574c50e793f9d52
 from busplanner.calculations.main import verify_schedule
 from busplanner.calculations.defaults import REQ_COL
 
@@ -74,35 +64,23 @@ def format_validation_issue(item):
     elif item is False:
         return "Validation failed."
 
-<<<<<<< Updated upstream
-    elif isinstance(item, pd.Series):
-=======
     if isinstance(item, pd.Series):
         # A pandas Series means one column is problematic.
->>>>>>> Stashed changes
         rows = [int(row) for row in item.index if row is not None]
         if not rows:
             return f"Validation issue in column '{item.name}'."
         return f"Validation issue in rows {rows[:10]} (column: {item.name})."
 
-<<<<<<< Updated upstream
-    elif isinstance(item, pd.DataFrame):
-=======
     if isinstance(item, pd.DataFrame):
         # A DataFrame means multiple fields are involved, so we report the row numbers and column names.
->>>>>>> Stashed changes
         rows = [int(row) for row in item.index if row is not None]
         columns = list(item.columns)
         if not rows:
             return f"Validation issue in columns: {columns}."
         return f"Validation issue in rows {rows[:10]} and columns {columns}."
 
-<<<<<<< Updated upstream
-    elif isinstance(item, (list, tuple)):
-=======
     if isinstance(item, (list, tuple)):
         # Nested validator output is flattened recursively so all issues appear in one readable list.
->>>>>>> Stashed changes
         return "; ".join(format_validation_issue(part) for part in item)
     else:
         return str(item)
@@ -110,8 +88,6 @@ def format_validation_issue(item):
 
 def check_data(df):
     """Run the project validator and return a list of issues if any."""
-<<<<<<< Updated upstream
-=======
     # This is the strict validation gate. It checks whether the DataFrame has the expected schema
     # required by the project and then allows the custom validation layer to decide if the uploaded
     # schedule is acceptable.
@@ -125,7 +101,6 @@ def check_data(df):
         "line",
         "energy consumption",
     ]
->>>>>>> Stashed changes
 
     # This is the strict validation stage used for blocking errors.
     # It returns a list of strings, and the Streamlit page treats that list as
@@ -162,13 +137,6 @@ def get_bus_schedule_warnings(df: pd.DataFrame):
     if df is None or df.empty:
         return ["The uploaded bus schedule is empty."]
 
-<<<<<<< Updated upstream
-    # REQ_COL contains the minimum required columns for a valid bus schedule.
-    # We compare the uploaded DataFrame columns against that required set.
-    # If any required columns are missing, we add a warning message.
-    missing_columns = [col for col in REQ_COL if col not in df.columns]
-    if missing_columns:
-=======
     if "activity" not in df.columns or "energy consumption" not in df.columns:
         return warnings
 
@@ -178,7 +146,6 @@ def get_bus_schedule_warnings(df: pd.DataFrame):
 
     # If any idle trip is missing an energy value, show a warning only for those rows.
     if not idle_energy.empty and idle_energy.isna().any():
->>>>>>> Stashed changes
         warnings.append(
             "Missing expected columns in the bus schedule: " + ", ".join(missing_columns)
         )
@@ -235,14 +202,8 @@ def check_data_display():
         )
         st.stop()
 
-<<<<<<< Updated upstream
-    # The uploader stores the selected file on the page, and the file is loaded
-    # only when the user uploads it. The actual schedule is then normalized and
-    # saved in session state so it can be reused across the rest of the website.
-=======
     # Streamlit widget: a file uploader with allowed Excel/CSV types.
     # It returns a file object, not a DataFrame, so the app then calls load_data() to convert it.
->>>>>>> Stashed changes
     uploaded_bus_schedule = st.file_uploader(
         "Upload bus schedule",
         type=["xlsx", "xls", "csv"],
@@ -268,12 +229,7 @@ def check_data_display():
     st.write("Uploaded bus schedule preview")
     st.dataframe(df.head(20), use_container_width=True)
 
-<<<<<<< Updated upstream
-    # This is the main validation step. check_data() returns a list of error strings.
-    # If the list is non-empty, the page shows them as a blocking error block.
-=======
     # This is the strict validation pass: it returns a list of serious issues.
->>>>>>> Stashed changes
     issues = check_data(df)
 
     if issues:
@@ -285,13 +241,7 @@ def check_data_display():
         for issue in issues:
             st.write(f"- {issue}")
 
-<<<<<<< Updated upstream
-    # These warnings are shown separately from hard validation errors. They are
-    # generated by get_bus_schedule_warnings() and each string is displayed with
-    # st.warning(...), which appears as a yellow banner/box rather than a red error.
-=======
     # This is the warning-only pass. These are not blockers, only quality notices.
->>>>>>> Stashed changes
     if "bus_schedule" in st.session_state:
         warnings = get_bus_schedule_warnings(st.session_state["bus_schedule"])
         if warnings:

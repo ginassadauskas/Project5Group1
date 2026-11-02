@@ -26,12 +26,7 @@ TARGET = d.SLOW_THRESHOLD * Q
 
 ###           ###
 
-<<<<<<< HEAD
-def load_trips(timetable, distance_matrix): # helper function 
-    trips = merge_route_plan(timetable, distance_matrix)
-=======
 def prepare_trips(merged, distance_matrix):
->>>>>>> 5c6babc459cf3535dc4a56938574c50e793f9d52
     travel = distance_matrix[['start', 'end', 'line', 'max_travel_time']]
     trips = merged.drop(columns=['arrival_time', 'Unnamed: 0'], errors='ignore')
     trips = trips.merge(travel, on=['start', 'end', 'line'], how='left')
@@ -39,14 +34,6 @@ def prepare_trips(merged, distance_matrix):
     trips['energy'] = trips['energy_consumption']
     return trips.sort_values('departure_time').reset_index(drop=True)
 
-<<<<<<< HEAD
-tt = pd.read_excel(DATA / "Timetable.xlsx") # change to step 1
-dm = pd.read_excel(DATA / "DistanceMatrix.xlsx") # change to step 1
-
-trips = load_trips(tt,dm)
-remaining_service = trips.to_dict('records')
-=======
->>>>>>> 5c6babc459cf3535dc4a56938574c50e793f9d52
 
 def load_deadhead(dm): 
     """
