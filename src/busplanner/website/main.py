@@ -11,7 +11,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from busplanner.website.upload import load_data, upload_display
 from busplanner.website.check import check_data_display
 from busplanner.website.tutorial import show_tutorial, tutorial_button
-
+from busplanner.website.optimize import optimize_display
+from busplanner.website.results import results_display
+from busplanner.website.comparison import comparison_display
 
 st.set_page_config(
     page_title="Bus Schedule Optimizer",
@@ -51,31 +53,17 @@ match step:
     case "Upload":
         upload_display()
 
-    
-
     case "Check":
         check_data_display()
 
     case "Optimize":
-
-        # call functions from optimize.py
-        pass
-
+        optimize_display()
 
     case "Results":
-
-        # call functions from results.py
-        pass
-
-
-    case "Optimize":
-        # call functions from optimize.py
-        pass
+        results_display()
 
     case "Comparison":
-
-        # call functions from comparison.py
-        pass
+        comparison_display()
 
     case _:
         st.error("Invalid step selected.")

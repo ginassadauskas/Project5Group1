@@ -86,7 +86,7 @@ def format_validation_issue(item):
         return str(item)
 
 
-def check_data(df):
+def check_data(df): #TODO make sure to add the checks from calculations/checker/main.py to this function
     """Run the project validator and return a list of issues if any."""
     # This is the strict validation gate. It checks whether the DataFrame has the expected schema
     # required by the project and then allows the custom validation layer to decide if the uploaded
@@ -194,7 +194,7 @@ def check_data_display():
     # This is the main Streamlit page function for the validation step.
     # It uses st.session_state to remember uploaded files across reruns, because Streamlit reruns
     # the script every time the user interacts with widgets.
-    st.header("2. Check the data")
+    st.header("2. Check & clean the data")
 
     if "merged_schedule" not in st.session_state:
         st.warning(
@@ -230,7 +230,7 @@ def check_data_display():
     st.dataframe(df.head(20), use_container_width=True)
 
     # This is the strict validation pass: it returns a list of serious issues.
-    issues = check_data(df)
+    issues = check_data(df) # TODO add the checks from calculations/checker/main.py to this function so that it returns a list of issues if any
 
     if issues:
         # st.error gives red text and is intended for blocking validation issues.

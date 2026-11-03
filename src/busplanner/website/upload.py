@@ -41,6 +41,9 @@ def upload_display():
         distance_matrix = load_data(distance_matrix_file)
         time_table = load_data(time_table_file)
 
+        st.session_state["distance_matrix"] = distance_matrix
+        st.session_state["time_table"] = time_table
+
         merged_schedule = merged(time_table, distance_matrix)
 
         st.session_state["merged_schedule"] = merged_schedule

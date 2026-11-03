@@ -2,7 +2,7 @@ import streamlit as st
 
 
 @st.dialog("Welcome to the Bus Planner")
-def tutorial_dialog():
+def tutorial_dialog(): # TODO Add multiple tutorial dialog options depending on which step the user is on. For example, if the user is on the "Upload" step, show a tutorial dialog that explains how to upload a file and what the expected format is. If the user is on the "Check" step, show a tutorial dialog that explains how to check the data and what to look for. If the user is on the "Optimize" step, show a tutorial dialog that explains how to optimize the schedule and what parameters can be adjusted. If the user is on the "Results" step, show a tutorial dialog that explains how to interpret the results and what metrics are important. If the user is on the "Comparison" step, show a tutorial dialog that explains how to compare different schedules and what to look for.
     st.markdown("### Quick start guide")
     st.write("Use this short walkthrough to get familiar with the app.")
 

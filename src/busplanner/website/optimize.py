@@ -9,7 +9,7 @@ optimize_schedule = optimise_schedule
 
 
 def optimize_display():
-    st.header("4. Optimize the schedule")
+    st.header("3. Optimize the schedule")
 
     if "merged_schedule" not in st.session_state:
         st.warning(
@@ -19,8 +19,11 @@ def optimize_display():
 
     distance_matrix = st.session_state.get("distance_matrix")
     if distance_matrix is None and "distance_matrix_file" in st.session_state:
-        distance_matrix = load_data(st.session_state["distance_matrix_file"])
-        st.session_state["distance_matrix"] = distance_matrix
+        try:
+            distance_matrix = load_data(st.session_state["distance_matrix_file"])
+            st.session_state["distance_matrix"] = distance_matrix
+        except Exception:
+            distance_matrix = None
 
     if distance_matrix is None:
         st.warning(
@@ -53,6 +56,3 @@ def optimize_display():
             optimized_df,
             use_container_width=True
         )
-
-
-optimize_display()
