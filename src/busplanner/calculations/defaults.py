@@ -58,7 +58,7 @@ REQ_COL: set[str] = set(
 
 #Energy consumption is optional, as our tool can automatically calculate it before verifying.
 
-ACTIVITIES: set[str] = set(['service', 'material', 'charging', 'idle'])
+ACTIVITIES: set[str] = set(['service trip', 'material trip', 'charging', 'idle'])
 
 
 print('calculations: defaults.py OK')

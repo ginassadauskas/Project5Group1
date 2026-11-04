@@ -151,10 +151,11 @@ def validate_energy(bus_plan) -> pd.DataFrame | bool:
 
     if len(battery_level_errors) == 0:
         return True
-    return pd.concat(battery_level_errors, axis=1).transpose()
+    
+    return pd.concat(battery_level_errors, axis=1).transpose() #, axis=1
 
 def validate_locations(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame) -> set | bool:
-    unknown_locations = (set(bus_plan['start location']) + set(bus_plan['end location'])) - set(distance_matrix['start'])
+    unknown_locations = (set(bus_plan['start location']) | set(bus_plan['end location'])) - set(distance_matrix['start'])
     return True if len(unknown_locations) == 0 else unknown_locations
 
 def validate_columns(bus_plan: pd.DataFrame) -> set | bool:
@@ -162,11 +163,12 @@ def validate_columns(bus_plan: pd.DataFrame) -> set | bool:
     return True if len(missing) == 0 else missing
 
 def validate_activities(bus_plan: pd.DataFrame) -> set | bool:
-    bad_mask = ~bus_plan['activity'].isin(ACTIVITIES)
-    return True if len(bad_mask) == 0 else bad_mask
+    unknown_activities = set(bus_plan['activity'].unique()) - ACTIVITIES
+
+    return True if unknown_activities == 0 else unknown_activities
 
 def validate_line_numbers(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame) -> set | bool:
-    unknown_lines = (set(bus_plan['line'])) - set(distance_matrix['line'])
+    unknown_lines = (set(bus_plan['line'].dropna(inplace=False))) - set(distance_matrix['line'])
     return True if len(unknown_lines) == 0 else unknown_lines
 
 def all_service_ran(bus_plan: pd.DataFrame, merged: pd.DataFrame) -> pd.DataFrame | bool:
@@ -180,8 +182,8 @@ def all_service_ran(bus_plan: pd.DataFrame, merged: pd.DataFrame) -> pd.DataFram
     """
     bus_plan = bus_plan.copy()[['start location', 'start time', 'line']]
     service_trips = merged.copy()[
-        ['start', 'departure', 'line']].rename(
-            columns={'start': 'start location', 'departure': 'start time'})
+        ['start', 'departure_time', 'line']].rename(
+            columns={'start': 'start location', 'departure_time': 'start time'})
 
     missing = service_trips.merge(bus_plan, how="left", indicator=True)
     missing = missing[missing["_merge"] == "left_only"].drop(columns="_merge")
