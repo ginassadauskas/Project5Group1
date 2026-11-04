@@ -87,44 +87,6 @@ def format_validation_issue(item):
     else:
         return str(item)
 
-
-def check_data(df): #TODO make sure to add the checks from calculations/checker/main.py to this function
-    """Run the project validator and return a list of issues if any."""
-    # This is the strict validation gate. It checks whether the DataFrame has the expected schema
-    # required by the project and then allows the custom validation layer to decide if the uploaded
-    # schedule is acceptable.
-    required_columns = [
-        "bus",
-        "start time",
-        "end time",
-        "start location",
-        "end location",
-        "activity",
-        "line",
-        "energy consumption",
-    ]
-
-    # This is the strict validation stage used for blocking errors.
-    # It returns a list of strings, and the Streamlit page treats that list as
-    # a trigger for st.error(...) messages below.
-    if df is None or not isinstance(df, pd.DataFrame):
-        return ["The uploaded schedule is not a valid DataFrame."]
-
-    df = normalize_bus_schedule(df)
-
-    missing_columns = [col for col in REQ_COL if col not in df.columns]
-    if missing_columns:
-        return [
-            "The uploaded schedule is missing required columns: "
-            + ", ".join(missing_columns)
-        ]
-
-    # The project accepts these column names as the standard schedule schema.
-    # This upload flow intentionally treats validation issues as a separate concern,
-    # while warning-level checks are displayed only when the data quality problem is specific.
-    return []
-
-
 def get_bus_schedule_warnings(df: pd.DataFrame):
     """Return warning messages for uploaded bus schedule data."""
     # Warnings are not hard validation errors. They are softer quality checks meant to tell the user
@@ -196,6 +158,7 @@ def check_data_display():
     # This is the main Streamlit page function for the validation step.
     # It uses st.session_state to remember uploaded files across reruns, because Streamlit reruns
     # the script every time the user interacts with widgets.
+    issues = False
     st.header("2. Check & clean the data")
 
     if "merged_schedule" not in st.session_state:
@@ -234,6 +197,7 @@ def check_data_display():
     # This is the strict validation pass: it returns a list of serious issues.
     busplan_issues = checker.verify_bus(df) # TODO add the checks from calculations/checker/main.py to this function so that it returns a list of issues if any
     if busplan_issues is not True:
+        issues = True
         # st.error gives red text and is intended for blocking validation issues.
         st.error(
             "The schedule contains isolated issues:"
@@ -245,6 +209,7 @@ def check_data_display():
     # This is the strict validation pass: it returns a list of serious issues.
     schedule_issues = checker.verify_critical(df, dd, md) # TODO
     if schedule_issues is not True:
+        issues = True
         # st.error gives red text and is intended for blocking validation issues.
         st.error(
             "The schedule contains conflicts with the timetable and/or distance matrix:"
@@ -255,6 +220,7 @@ def check_data_display():
 
     consumption_issues = correct_consumption(df, dd) # TODO
     if consumption_issues is not True:
+        issues = True
         # st.error gives red text and is intended for blocking validation issues.
         st.warning(
             "The schedule contains incorrect power consumptions and have been adjusted:"
@@ -267,6 +233,7 @@ def check_data_display():
 
     charge_issues = validate_energy(df) # TODO
     if charge_issues is not True:
+        issues = True
         # st.error gives red text and is intended for blocking validation issues.
         st.error(
             "The schedule contains buses that fall below the allowed safety margin:"
@@ -286,7 +253,7 @@ def check_data_display():
 
     # No issues means the uploaded file passed the hard validation gate. The success
     # message and metrics only appear when the list of errors is empty.
-    if not issues:
+    if issues is not True:
         # A successful validation result is displayed in green.
         st.success(
             "The uploaded schedule passed validation."
