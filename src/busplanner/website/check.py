@@ -7,7 +7,6 @@ from busplanner.calculations.checker.warning import correct_consumption
 from busplanner.calculations.checker.errors import validate_energy
 from busplanner.calculations.defaults import REQ_COL
 
-
 def normalize_bus_schedule(df):
     """Convert time-like columns to minute values before validation."""
     # The uploaded schedule may contain times as strings like "08:30" or "08:30:00".
@@ -207,7 +206,7 @@ def check_data_display():
             st.write(f"- {issue}")
 
     # This is the strict validation pass: it returns a list of serious issues.
-    schedule_issues = checker.verify_critical(df, dd, md) # TODO
+    schedule_issues = checker.verify_critical(df, st.session_state["distance_matrix"], st.session_state["merged_schedule"]) # TODO
     if schedule_issues is not True:
         issues = True
         # st.error gives red text and is intended for blocking validation issues.
@@ -218,7 +217,7 @@ def check_data_display():
         for issue in schedule_issues:
             st.write(f"- {issue}")
 
-    consumption_issues = correct_consumption(df, dd) # TODO
+    consumption_issues = correct_consumption(df, st.session_state["distance_matrix"]) # TODO
     if consumption_issues is not True:
         issues = True
         # st.error gives red text and is intended for blocking validation issues.
