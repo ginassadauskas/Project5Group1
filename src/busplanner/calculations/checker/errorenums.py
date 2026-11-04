@@ -31,6 +31,9 @@ def error_service_line(errorlines: pd.DataFrame):
     return ers
 
 def error_gaps(errorlines: pd.DataFrame):
+    if isinstance(errorlines, list[dict]):
+        return error_bus_teleport(errorlines)
+    
     ers = []
 
     for _, row in errorlines.iterrows():
