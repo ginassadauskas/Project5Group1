@@ -1,7 +1,7 @@
 """KPI calculations related to the current schedule
 """
 from busplanner.calculations.grade import trips as t
-from busplanner.calculations.imports import merge_route_plan
+from busplanner.calculations.imports import convert_time_to_minutes, merge_route_plan
 from busplanner.calculations.power import powerpertrip
 import pandas as pd
 
@@ -28,7 +28,9 @@ def kpi(schedule: pd.DataFrame, req_bus_line: pd.DataFrame,
 def simulbus(merged: pd.DataFrame, time: int):
      """Counts the number of buses that need to be active at the given time.
      """
-     return sum(merged['departure_time'] < time) - sum(merged['arrival_time'] < time)
+     departure = convert_time_to_minutes(merged['departure_time'])
+     arrival = convert_time_to_minutes(merged['arrival_time'])
+     return sum(departure < time) - sum(arrival < time)
 
 def minimum_bus(req_bus_line: pd.DataFrame, distance_matrix: pd.DataFrame) -> int:
      """Using a modified Sweep Search algorithm, find the minimum buses required.
@@ -72,9 +74,15 @@ def bus_ratio(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, distance_matri
 def efficiency(schedule: pd.DataFrame, merged: pd.DataFrame):
      # clip sets all negative values to 0, removing capacity gained from charging.
      # Therefor, we onlly include (theoretical minimum) the energy consumed.
-     merged = sum(merged.clip(lower=0)['energy_consumption']) 
-     schedule = sum(schedule.clip(lower=0)['energy consumption'])
+     merged_energy = pd.to_numeric(merged['energy_consumption'], errors='coerce').fillna(0)
+     schedule_energy = pd.to_numeric(schedule['energy consumption'], errors='coerce').fillna(0)
 
-     return merged / schedule
+     merged_total = merged_energy.clip(lower=0).sum()
+     schedule_total = schedule_energy.clip(lower=0).sum()
+
+     if schedule_total == 0:
+         return 0.0
+
+     return merged_total / schedule_total
 
 print('grade: kpi.py OK')

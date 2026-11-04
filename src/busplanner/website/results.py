@@ -1,4 +1,5 @@
 import ast
+import io
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -128,11 +129,13 @@ def results_display():
         height=450
     )
 
-    csv_file = df.to_csv(index=False)
+    excel_buffer = io.BytesIO()
+    df.to_excel(excel_buffer, index=False, engine="openpyxl")
+    excel_buffer.seek(0)
 
     st.download_button(
         "Download optimized schedule",
-        data=csv_file,
-        file_name="optimized_schedule.csv",
-        mime="text/csv"
+        data=excel_buffer.getvalue(),
+        file_name="optimized_schedule.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )

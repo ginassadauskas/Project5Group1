@@ -55,70 +55,36 @@ def format_validation_issue(item):
 
 def get_bus_schedule_warnings(df: pd.DataFrame):
     """Return warning messages for uploaded bus schedule data."""
-    # Warnings are not hard validation errors. They are softer quality checks meant to tell the user
-    # that something may need manual attention without blocking the whole page.
     warnings = []
 
-    # This function does not raise an exception or stop the page. It simply
-    # builds a Python list of warning strings. That list is later checked in the
-    # Streamlit page, and if it's not empty the page calls st.warning(...)
-    # and prints each message one by one.
-    # So this is the "preparation stage" for warnings before the website displays them.
     if df is None or df.empty:
         return ["The uploaded bus schedule is empty."]
 
-    if "activity" not in df.columns or "energy consumption" not in df.columns:
-        return warnings
-
-    # pandas boolean masks are used here to find all rows where the activity is idle.
-    idle_activity_mask = df["activity"].astype(str).str.lower().eq("idle")
-    idle_energy = df.loc[idle_activity_mask, "energy consumption"]
-
-    # If any idle trip is missing an energy value, show a warning only for those rows.
-    if not idle_energy.empty and idle_energy.isna().any():
+    missing_columns = sorted(set(REQ_COL) - set(df.columns))
+    if missing_columns:
         warnings.append(
             "Missing expected columns in the bus schedule: " + ", ".join(missing_columns)
         )
-        # If the required columns like 'activity' or 'energy consumption' are missing,
-        # there is no point continuing with the rest of the warning checks because
-        # those column-based checks would fail on missing keys.
-        if "activity" not in df.columns or "energy consumption" not in df.columns:
-            return warnings
+        return warnings
 
-    # This part checks for idle trips that are missing energy data.
-    # It creates a boolean mask where the activity text equals 'idle' (case-insensitive).
-    # That mask is used to select only rows where the activity is idle.
-    if "activity" in df.columns:
+    if "activity" in df.columns and "energy consumption" in df.columns:
         idle_activity_mask = df["activity"].astype(str).str.lower().eq("idle")
-    else:
-        idle_activity_mask = pd.Series(False, index=df.index)
-
-    # If the energy consumption column exists, we inspect only the idle rows.
-    # If any of those idle energy values are NaN, we add a warning.
-    if "energy consumption" in df.columns:
         idle_energy = df.loc[idle_activity_mask, "energy consumption"]
         if not idle_energy.empty and idle_energy.isna().any():
             warnings.append(
                 "Idle rows in the bus schedule are missing energy consumption values."
             )
 
-        # This second check looks at the entire column, not just idle rows.
-        # If any row in the uploaded schedule is missing an energy value,
-        # it is also flagged as a warning.
         if df["energy consumption"].isna().any():
             warnings.append("Some rows in the bus schedule have missing energy consumption values.")
 
-    # This part checks for duplicate rows.
-    # DataFrame.duplicated() returns a boolean Series with True for repeated rows.
-    # We compare all required columns that are present in the DataFrame,
-    # so duplicates are detected based on the meaningful schedule data.
     duplicate_columns = [col for col in REQ_COL if col in df.columns]
-    duplicate_rows = df.duplicated(subset=duplicate_columns)
-    if duplicate_rows.any():
-        warnings.append("Duplicate trip rows were detected in the bus schedule.")
+    if duplicate_columns:
+        duplicate_rows = df.duplicated(subset=duplicate_columns)
+        if duplicate_rows.any():
+            warnings.append("Duplicate trip rows were detected in the bus schedule.")
 
     return warnings
-
 
 def check_data_display():
     # This is the main Streamlit page function for the validation step.

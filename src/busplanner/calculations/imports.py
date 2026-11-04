@@ -30,24 +30,51 @@ def find_bustrip(incomplete: pd.DataFrame, original: pd.DataFrame, drop: bool=Fa
 
 def convert_time_to_minutes(time_column: pd.Series, threshold: int=MIDNIGHT) -> pd.Series:
     '''
-    Converts a column of time strings in HH:MM:SS format to minutes
+    Converts a column of time values to minutes since midnight.
 
-    Parameters:
-    ---------
-    time_column : pd.Series
-        A pandas Series containing time strings in HH:MM:SS format.
-
-    Returns:
-    ---------
-    minutes : pd.Series
-        Minutes since midnight for each time in the input column. 
+    Accepts input in a few common Excel/project formats:
+    - numeric minute values like 303
+    - numeric strings like "303"
+    - clock strings like "05:03"
+    - clock strings with seconds like "05:03:00"
     '''
-    try:
-        temp = pd.to_datetime(time_column, format='%H:%M:%S')
-    except:
-        temp = pd.to_datetime(time_column, format='%H:%M')
+    values = pd.Series(time_column, copy=True)
 
-    minutes = temp.dt.hour * 60 + temp.dt.minute
+    def parse_value(value):
+        if pd.isna(value):
+            return float('nan')
+
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                return float('nan')
+            try:
+                num = float(value)
+                if ':' not in value:
+                    return num
+            except ValueError:
+                pass
+
+            for fmt in ('%H:%M:%S', '%H:%M'):
+                try:
+                    temp = pd.to_datetime(value, format=fmt)
+                    return temp.hour * 60 + temp.minute
+                except (TypeError, ValueError):
+                    continue
+
+            return float('nan')
+
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+
+        try:
+            temp = pd.to_datetime(value)
+            return temp.hour * 60 + temp.minute
+        except (TypeError, ValueError):
+            return float('nan')
+
+    minutes = values.map(parse_value)
+    minutes = pd.to_numeric(minutes, errors='coerce')
     return _adjust_for_midnight(minutes, threshold)
 
 def cmh(minutes: int):

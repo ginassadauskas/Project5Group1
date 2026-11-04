@@ -2,7 +2,7 @@
 """
 import pandas as pd
 import numpy as np
-from busplanner.calculations.defaults import CHARGER, ACTIVITIES, REQ_COL
+from busplanner.calculations.defaults import CHARGER, ACTIVITIES, REQ_COL, normalize_location_name
 from busplanner.calculations.power import energy_levels, safety_margin
 from busplanner.calculations.imports import find_bustrip
 
@@ -155,7 +155,12 @@ def validate_energy(bus_plan) -> pd.DataFrame | bool:
     return pd.concat(battery_level_errors, axis=1).transpose() #, axis=1
 
 def validate_locations(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame) -> set | bool:
-    unknown_locations = (set(bus_plan['start location']) | set(bus_plan['end location'])) - set(distance_matrix['start'])
+    known_locations = {normalize_location_name(loc) for loc in distance_matrix['start']}
+    schedule_locations = {
+        normalize_location_name(loc)
+        for loc in set(bus_plan['start location']) | set(bus_plan['end location'])
+    }
+    unknown_locations = schedule_locations - known_locations
     return True if len(unknown_locations) == 0 else unknown_locations
 
 def validate_columns(bus_plan: pd.DataFrame) -> set | bool:
@@ -197,7 +202,7 @@ def has_issue(result):
         return True
     return len(result) > 0
 
-def start_garage(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
+def start_garage(bus_plan: pd.DataFrame) -> list[dict] | bool:
     '''
     Checks if the first and last location of the whole schedule for each bus is the garage
 
@@ -208,27 +213,47 @@ def start_garage(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
 
     Returns:
     ---------
-    garage_issues : pd.DataFrame
-        Each entry with a bus that has a starting or ending location not in an available garage.
+    garage_issues : list[dict]
+        Each item with a bus that has a starting or ending location not in an available garage.
     '''
-    bus_plan.copy()
-    garage_issues = []  # pretty much same with the template 
+    bus_plan = bus_plan.copy()
+    garage_issues = []
 
-    for bus in bus_plan['bus'].unique():  # for every unique bus number
+    normalized_charger = {normalize_location_name(loc) for loc in CHARGER}
+
+    for bus in bus_plan['bus'].unique():
         sorted_plan = bus_plan[bus_plan['bus'] == bus].sort_values(by='start time')
+        if sorted_plan.empty:
+            continue
+
         first_row = sorted_plan.iloc[0]
         last_row = sorted_plan.iloc[-1]
 
-        if first_row['start location'] not in CHARGER:
-            garage_issues.append(first_row)
-            
-        if last_row['end location'] not in CHARGER:
-            garage_issues.append(last_row)
+        first_start = normalize_location_name(first_row['start location'])
+        first_end = normalize_location_name(first_row['end location'])
+        last_start = normalize_location_name(last_row['start location'])
+        last_end = normalize_location_name(last_row['end location'])
 
-    # verified against data from the first 3 buses 
+        if first_start not in normalized_charger:
+            garage_issues.append({
+                'bus': bus,
+                'start location': first_row['start location'],
+                'end location': first_row['end location'],
+                'start time': first_row['start time'],
+                'issue': 'start'
+            })
+
+        if last_end not in normalized_charger:
+            garage_issues.append({
+                'bus': bus,
+                'start location': last_row['start location'],
+                'end location': last_row['end location'],
+                'start time': last_row['start time'],
+                'issue': 'end'
+            })
 
     if len(garage_issues) == 0:
         return True
-    return pd.concat(garage_issues)
+    return garage_issues
 
 print('checker: errors.py OK')

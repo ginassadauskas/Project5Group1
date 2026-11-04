@@ -1,4 +1,8 @@
 import pandas as pd
+from busplanner.calculations.defaults import (
+    normalize_bus_plan_columns,
+    normalize_location_name,
+)
 from ..imports import convert_time_to_minutes
 
 def convert_empty_line_to_next(bus_plan: pd.DataFrame):
@@ -32,7 +36,16 @@ def convert_empty_line_to_next(bus_plan: pd.DataFrame):
 def import_bus_plan(bus_plan: pd.DataFrame):
     """Imports and prepares the bus plan for further processing.
     """
-    bus_plan = bus_plan.copy()
+    bus_plan = normalize_bus_plan_columns(bus_plan.copy())
+
+    if 'start location' in bus_plan.columns:
+        bus_plan['start location'] = bus_plan['start location'].map(normalize_location_name)
+    if 'end location' in bus_plan.columns:
+        bus_plan['end location'] = bus_plan['end location'].map(normalize_location_name)
+
+    if 'start time' not in bus_plan.columns or 'end time' not in bus_plan.columns:
+        missing = sorted({"start time", "end time"} - set(bus_plan.columns))
+        raise KeyError(f"Missing required time columns in uploaded bus schedule: {missing}")
 
     bus_plan['start time'] = convert_time_to_minutes(bus_plan['start time'])
     bus_plan['end time'] = convert_time_to_minutes(bus_plan['end time'])
