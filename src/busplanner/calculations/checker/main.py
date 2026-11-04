@@ -41,7 +41,7 @@ def verify_bus(bus_plan: pd.DataFrame):
     https://stackoverflow.com/questions/18665873/filtering-a-list-based-on-a-list-of-booleans
     """
 
-    bus_plan.copy()
+    bus_plan = bus_plan.copy()
     
     checks = [
         e.activity_none_empty(bus_plan),
