@@ -39,10 +39,7 @@ def verify_bus(bus_plan: pd.DataFrame):
             The fifth represents inconsistant bus locations.
     -Cretid for compress: Ashwini Chaudhary
     https://stackoverflow.com/questions/18665873/filtering-a-list-based-on-a-list-of-booleans
-    """
-
-    bus_plan = import_bus_plan(bus_plan)
-    
+    """    
     checks = [
         e.activity_none_empty(bus_plan),
         e.validate_activities(bus_plan),
