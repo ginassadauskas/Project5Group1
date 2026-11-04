@@ -1,13 +1,14 @@
 from typing import Any
 import pandas as pd
+from busplanner.calculations.imports import cmh
 
 ## verify_bus()
 def error_activity_none_empty(errorlines: pd.DataFrame):
     ers = []
 
-    for index, haserror in errorlines.iterrows():
+    for _, haserror in errorlines.iterrows():
         if haserror:
-            ers.append(f'Bus found without an activity at index {index}')
+            ers.append(f'Bus found without an activity at start time {cmh(haserror['start time'])}')
 
     return ers
 
@@ -24,19 +25,17 @@ def error_validate_activities(errorlines: set):
 def error_service_line(errorlines: pd.DataFrame):
     ers = []
 
-    for index, row in errorlines:
-        ers.append(f'A bus at index {index} is running a service trip without a line.')
+    for _, row in errorlines:
+        ers.append(f'A bus at start time {cmh(row['start time'])} is running a service trip without a line.')
 
     return ers
 
 def error_gaps(errorlines: pd.DataFrame):
     ers = []
-    prev_index = 0
 
-    for index, row in errorlines:
-        ers.append(f'''Bus {row['bus']} start ({row['start time']}) and previous end 
-                   ({row['end times']}) times do not match. (Line {index} and {prev_index})''')
-        prev_index = index
+    for _, row in errorlines.iterrows():
+        ers.append(f'''Bus {row['bus']} start ({cmh(row['start time'])}) and previous end 
+                   ({cmh(row['end time'])}) times do not match.''')
 
     return ers
 
@@ -44,7 +43,7 @@ def error_bus_teleport(errorlines: list[dict]):
     ers = []
 
     for error in errorlines:
-        ers.append(f'Bus {error['bus']} starts its activity of {error['start time']} at location {error['start location']}, but ended its last activity in {error["end location"]}.')
+        ers.append(f'Bus {error['bus']} starts its activity of {cmh(error['start time'])} at location {error['start location']}, but ended its last activity in {error["end location"]}.')
 
     return ers
 
@@ -52,7 +51,7 @@ def error_all_service_ran(errorlines: pd.DataFrame):
     ers = []
 
     for _, error in errorlines.iterrows():
-        ers.append(f'No bus rides the service trip that was supposed to start at {error['start time']} and line {error['line']}.')
+        ers.append(f'No bus rides the service trip that was supposed to start at {cmh(error['start time'])} and line {error['line']}.')
 
     return ers
 
@@ -75,8 +74,8 @@ def error_validate_line_numbers(errorlines):
 def error_validate_energy(errorlines: pd.DataFrame):
     ers = []
 
-    for index, error in errorlines.iterrows():
-        ers.append(f'Bus {error['bus']} runs out of charge at line {index}.')
+    for _, error in errorlines.iterrows():
+        ers.append(f'Bus {error['bus']} runs out of charge at start time {cmh(error['start time'])}.')
 
     return ers
 

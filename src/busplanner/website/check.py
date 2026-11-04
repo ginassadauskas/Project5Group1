@@ -4,7 +4,6 @@ import pandas as pd
 from busplanner.calculations.imports import normalize_schedule_values
 from busplanner.calculations.checker import main as checker
 from busplanner.calculations.checker.warning import correct_consumption
-from busplanner.calculations.checker.errors import validate_energy
 from busplanner.calculations.defaults import REQ_COL
 
 def normalize_bus_schedule(df):
@@ -202,7 +201,7 @@ def check_data_display():
         for issue in consumption_issues[0]:
             st.write(f"- {issue}")
 
-    charge_issues = validate_energy(df) # TODO
+    charge_issues = checker.val_energy(df) # TODO
     if charge_issues is not True:
         issues = True
         # st.error gives red text and is intended for blocking validation issues.

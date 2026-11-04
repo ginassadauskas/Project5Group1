@@ -49,7 +49,6 @@ def verify_bus(bus_plan: pd.DataFrame):
         e.start_garage(bus_plan)
     ]
     errors = [False if error is True else True for error in checks]
-
     if not any(errors):
         return True
 
@@ -155,32 +154,12 @@ def verify_schedule(bus_plan_file: str | pd.DataFrame) -> list[Any] | bool:
             return st.write(f"There were warnings: {warning_result}")
 
     return True
-    if not isinstance(import_result, tuple) or len(import_result) != 2:
-        return False
-    if import_result[0] is False:
-        return import_result[1],
 
-    bus_plan = import_result[1]
+def val_energy(bus_plan):
+    energy = e.validate_energy(bus_plan)
 
-    bus_result = verify_bus(bus_plan)
-    if bus_result is not True:
-        return bus_result,
-
-    critical_result = verify_critical(bus_plan, distance_matrix, merged)
-    if critical_result is not True:
-        return st.write(f"the critical result is: {critical_result}")
-
-    if hasattr(e, "validate_energy") and callable(e.validate_energy):
-        energy_result = e.validate_energy(bus_plan)
-        if energy_result is not True:
-            return st.write(f"The energy result is: {energy_result}")
-
-    if hasattr(w, "warning") and callable(w.warning):
-        warning_result = w.warning(bus_plan)
-        if warning_result is not False:
-            return st.write(f"There were warnings: {warning_result}")
-
-    return True
-
+    if energy is True:
+        return True
+    return ee.error_validate_energy(energy)
 
 print('checker: main OK')
