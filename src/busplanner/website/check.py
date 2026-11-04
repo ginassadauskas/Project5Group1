@@ -1,42 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-from busplanner.calculations.checker.imports import convert_time_to_minutes
+from busplanner.calculations.imports import normalize_schedule_values
 from busplanner.calculations.checker import main as checker
 from busplanner.calculations.checker.warning import correct_consumption
 from busplanner.calculations.defaults import REQ_COL
 
 def normalize_bus_schedule(df):
     """Convert time-like columns to minute values before validation."""
-    # The uploaded schedule may contain times as strings like "08:30" or "08:30:00".
-    # pandas handles column data, and convert_time_to_minutes converts those to numeric minutes.
-    # This keeps the validation logic consistent even when the file comes from Excel or CSV.
-    if df is None or not isinstance(df, pd.DataFrame):
-        return df
-
-    normalized = df.copy()
-    for column in ["start time", "end time"]:
-        if column not in normalized.columns:
-            continue
-
-        series = normalized[column]
-        # If the column is already numeric, leave it alone.
-        if pd.api.types.is_numeric_dtype(series):
-            continue
-
-        try:
-            # First attempt: use the project helper for normalizing schedule times.
-            normalized[column] = convert_time_to_minutes(series)
-        except Exception:
-            try:
-                # Second attempt: parse datetime formats and convert to minutes manually.
-                parsed = pd.to_datetime(series, errors="coerce")
-                normalized[column] = parsed.dt.hour * 60 + parsed.dt.minute
-            except Exception:
-                # If conversion still fails, leave the value as-is and let the rest of the app decide.
-                pass
-
-    return normalized
+    return normalize_schedule_values(df)
 
 
 def load_data(uploaded_file):
