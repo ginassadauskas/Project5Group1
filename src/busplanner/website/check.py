@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 
 from busplanner.calculations.checker.imports import convert_time_to_minutes
-from busplanner.calculations.main import verify_schedule
+from busplanner.calculations.checker import main as checker
+from busplanner.calculations.checker.warning import correct_consumption
+from busplanner.calculations.checker.errors import validate_energy
 from busplanner.calculations.defaults import REQ_COL
 
 
@@ -230,15 +232,47 @@ def check_data_display():
     st.dataframe(df.head(20), use_container_width=True)
 
     # This is the strict validation pass: it returns a list of serious issues.
-    issues = check_data(df) # TODO add the checks from calculations/checker/main.py to this function so that it returns a list of issues if any
-
-    if issues:
+    busplan_issues = checker.verify_bus(df) # TODO add the checks from calculations/checker/main.py to this function so that it returns a list of issues if any
+    if busplan_issues is not True:
         # st.error gives red text and is intended for blocking validation issues.
         st.error(
-            "The schedule contains validation issues:"
+            "The schedule contains isolated issues:"
         )
 
-        for issue in issues:
+        for issue in busplan_issues:
+            st.write(f"- {issue}")
+
+    # This is the strict validation pass: it returns a list of serious issues.
+    schedule_issues = checker.verify_critical(df, dd, md) # TODO
+    if schedule_issues is not True:
+        # st.error gives red text and is intended for blocking validation issues.
+        st.error(
+            "The schedule contains conflicts with the timetable and/or distance matrix:"
+        )
+
+        for issue in schedule_issues:
+            st.write(f"- {issue}")
+
+    consumption_issues = correct_consumption(df, dd) # TODO
+    if consumption_issues is not True:
+        # st.error gives red text and is intended for blocking validation issues.
+        st.warning(
+            "The schedule contains incorrect power consumptions and have been adjusted:"
+        )
+
+        df = consumption_issues[1]
+
+        for issue in consumption_issues[0]:
+            st.write(f"- {issue}")
+
+    charge_issues = validate_energy(df) # TODO
+    if charge_issues is not True:
+        # st.error gives red text and is intended for blocking validation issues.
+        st.error(
+            "The schedule contains buses that fall below the allowed safety margin:"
+        )
+
+        for issue in charge_issues:
             st.write(f"- {issue}")
 
     # This is the warning-only pass. These are not blockers, only quality notices.
