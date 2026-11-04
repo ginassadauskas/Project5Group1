@@ -48,7 +48,7 @@ def convert_time_to_minutes(time_column: pd.Series, threshold: int=MIDNIGHT) -> 
         try:
             temp = pd.to_datetime(time_column, format='%H:%M')
         except:
-            temp = time_column
+            return time_column
 
     minutes = temp.dt.hour * 60 + temp.dt.minute
     return _adjust_for_midnight(minutes, threshold)
