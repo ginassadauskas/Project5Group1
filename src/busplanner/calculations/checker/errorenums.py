@@ -34,7 +34,7 @@ def error_gaps(errorlines: pd.DataFrame):
     ers = []
 
     for _, row in errorlines.iterrows():
-        ers.append(f'''Bus {row['bus']} start ({cmh(row['start time'])}) and previous end 
+        ers.append(f'''Bus {row['bus']} start ({row['start time']}) and previous end 
                    ({cmh(row['end time'])}) times do not match.''')
 
     return ers
