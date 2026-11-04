@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from busplanner.calculations.checker import main as checker
+from busplanner.calculations.checker.imports import import_bus_plan
 from busplanner.calculations.checker.warning import correct_consumption
 from busplanner.calculations.defaults import REQ_COL
 
@@ -13,9 +14,9 @@ def load_data(uploaded_file):
     file_name = str(uploaded_file.name).lower()
 
     if file_name.endswith(".csv"):
-        return pd.read_csv(uploaded_file)
+        return import_bus_plan(pd.read_csv(uploaded_file))
     if file_name.endswith((".xlsx", ".xls")):
-        return pd.read_excel(uploaded_file)
+        return import_bus_plan(pd.read_excel(uploaded_file))
 
     raise ValueError(f"Unsupported file type: {uploaded_file.name}")
 
