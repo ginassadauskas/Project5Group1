@@ -7,23 +7,6 @@ from busplanner.calculations.checker import warning as w
 from busplanner.calculations.checker import errorenums as ee
 from busplanner.calculations.checker.imports import import_bus_plan
 
-
-def _has_issue(result):
-    """Normalize a checker result into a plain boolean."""
-    if result is True:
-        return False
-    if result is False:
-        return True
-    if result is None:
-        return False
-    if isinstance(result, (pd.Series, pd.DataFrame, list, tuple, set, dict, str)):
-        return len(result) > 0
-    try:
-        return bool(result)
-    except (TypeError, ValueError):
-        return False
-
-
 def import_checks(filepath: str) -> tuple[bool, pd.DataFrame | str]:
     """imports and verifies the state of the bus_plan.
 
@@ -62,9 +45,10 @@ def verify_bus(bus_plan: pd.DataFrame):
         e.validate_activities(bus_plan),
         e.service_line(bus_plan),
         e.gaps(bus_plan),
-        e.bus_teleport(bus_plan)
+        e.bus_teleport(bus_plan),
+        e.start_garage(bus_plan)
     ]
-    errors = [_has_issue(error) for error in checks]
+    errors = [False if error is True else True for error in checks]
 
     if not any(errors):
         return True
@@ -83,6 +67,8 @@ def verify_bus(bus_plan: pd.DataFrame):
         errormsg.extend(ee.error_gaps(checks[3]))
     if errors[4]:
         errormsg.extend(ee.error_bus_teleport(checks[4]))
+    if errors[5]:
+        errormsg.extend(ee.warning_start_garage(checks[5]))
 
     return errormsg
 
@@ -105,7 +91,8 @@ def verify_critical(bus_plan: pd.DataFrame,
         e.validate_locations(bus_plan, distance_matrix),
         e.validate_line_numbers(bus_plan, distance_matrix)
     ]
-    errors = [_has_issue(error) for error in checks]
+
+    errors = [False if error is True else True for error in checks]
 
     if not any(errors):
         return True
