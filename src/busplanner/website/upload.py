@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from busplanner.calculations.imports import normalize_dataframe_columns
+
 from busplanner.calculations.main import merged
 
 
@@ -39,8 +39,8 @@ def upload_display():
     )
 
     if distance_matrix_file is not None and time_table_file is not None:
-        distance_matrix = normalize_dataframe_columns(load_data(distance_matrix_file))
-        time_table = normalize_dataframe_columns(load_data(time_table_file))
+        distance_matrix = load_data(distance_matrix_file)
+        time_table = load_data(time_table_file)
 
         st.session_state["distance_matrix"] = distance_matrix
         st.session_state["time_table"] = time_table

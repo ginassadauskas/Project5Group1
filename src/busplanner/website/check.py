@@ -1,14 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-from busplanner.calculations.imports import normalize_schedule_values
 from busplanner.calculations.checker import main as checker
 from busplanner.calculations.checker.warning import correct_consumption
 from busplanner.calculations.defaults import REQ_COL
-
-def normalize_bus_schedule(df):
-    """Convert time-like columns to minute values before validation."""
-    return normalize_schedule_values(df)
 
 
 def load_data(uploaded_file):
@@ -149,7 +144,7 @@ def check_data_display():
         # This stores the uploaded file and the parsed DataFrame in session_state so they persist
         # across reruns within the same browser session.
         st.session_state["bus_schedule_file"] = uploaded_bus_schedule
-        st.session_state["bus_schedule"] = normalize_bus_schedule(load_data(uploaded_bus_schedule))
+        st.session_state["bus_schedule"] = load_data(uploaded_bus_schedule)
         st.success("Bus schedule uploaded and stored globally.")
 
     if "bus_schedule" not in st.session_state:
