@@ -123,19 +123,23 @@ def tutorial_comparison(): # TODO Add multiple tutorial dialog options depending
     if st.button("Got it"):
         st.session_state["tutorial_seen"] = True
 
-def show_tutorial():
-    """Open the popup only on the first run of the app."""
-    if "tutorial_seen" not in st.session_state:
-        st.session_state["tutorial_seen"] = True
-
 def tutorial_button():
     """Add a helper button to reopen the tutorial later."""
     st.write("Made by Team 1 - Fontys University of Applied Sciences")
     st.write("Emily, Casper, & Ginas")
     if st.sidebar.button("Open tutorial"):
-        tutorial_dialog()
+        match st.session_state["step"]:
+            case "Upload":
+                tutorial_dialog()
+            case "Check":
+                tutorial_check()
+            case "Optimize":
+                tutorial_optimize()
+            case "Results":
+                tutorial_results()
+            case "Comparison":
+                tutorial_comparison()
 
 if __name__ == "__main__":
-    st.title("Tutorial test")
-    show_tutorial()
+    st.title("Tutorial Popup!")
     tutorial_button()

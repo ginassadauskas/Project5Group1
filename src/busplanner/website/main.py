@@ -35,6 +35,8 @@ st.write(
 st.divider()
  # dummy functions removed
 
+st.session_state['step'] = "Upload"
+
 step = st.radio(
     "Step",
     [
@@ -48,22 +50,26 @@ step = st.radio(
     horizontal=True
 )
 
-
 match step:
     case "Upload":
         upload_display()
+        st.session_state['step'] = "Upload"
 
     case "Check":
         check_data_display()
+        st.session_state['step'] = "Check"
 
     case "Optimize":
         optimize_display()
+        st.session_state['step'] = "Optimize"
 
     case "Results":
         results_display()
+        st.session_state['step'] = "Results"
 
     case "Comparison":
         comparison_display()
+        st.session_state['step'] = "Comparison"
 
     case _:
         st.error("Invalid step selected.")
