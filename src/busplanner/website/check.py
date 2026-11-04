@@ -144,7 +144,7 @@ def check_data_display():
         # This stores the uploaded file and the parsed DataFrame in session_state so they persist
         # across reruns within the same browser session.
         st.session_state["bus_schedule_file"] = uploaded_bus_schedule
-        st.session_state["bus_schedule"] = normalize_bus_schedule(load_data(uploaded_bus_schedule))
+        st.session_state["bus_schedule"] = load_data(uploaded_bus_schedule)
         st.success("Bus schedule uploaded and stored globally.")
 
     if "bus_schedule" not in st.session_state:
