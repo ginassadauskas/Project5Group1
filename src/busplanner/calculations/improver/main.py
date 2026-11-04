@@ -276,7 +276,31 @@ def read_table(source):
 
 #####
 
-# MAIN FUNCTION THAT BUILDS THE SCHEDULE FOR ALL BUSES
+# MAIN FUNCTION THAT BUILDS THE SCHEDULE FOR ALL BUSES, along with helper functions to make the dataframe follow formatting
+# rules 
+
+
+# REPLACEMENT DEFINITIONS
+
+cols = ['start location', 'end location', 'start time', 'end time',
+        'activity', 'line', 'energy consumption', 'bus']
+
+activities = {'material': 'material trip', 'service': 'service trip'}
+
+# REPLACEMENT DEFINITIONS
+
+def m_to_hms(minutes):
+    m = int(round(minutes)) % 1440 # account for midnight
+    return f"{m // 60:02d}:{m % 60:02d}:00" #HH:MM:SS format
+
+def format_bus_plan(df: pd.DataFrame):
+    out = df.copy() 
+    for c in ['start time', 'end time']:
+        out[c] = out[c].map(m_to_hms) # replace time
+    out['activity'] = out['activity'].replace(activities) # replace activities 
+    out['line'] = out['line'].where(out['line'] > 0).astype('Int64') # line as int 
+    return out[cols] 
+
 
 def optimise_schedule(merged, distance_matrix, start_soc=1.0):
     """
@@ -286,7 +310,7 @@ def optimise_schedule(merged, distance_matrix, start_soc=1.0):
 
         distance_matrix: the uploaded distance matrix. start_soc: 0 to 1. (default is 1)
 
-        Returns the bus plan as a DataFrame (times in minutes)."""
+        Returns the bus plan as a DataFrame (times in original client format HH:MM:SS)."""
     merged = read_table(merged)
     dm = read_table(distance_matrix)
     trips = prepare_trips(merged, dm)
@@ -294,7 +318,28 @@ def optimise_schedule(merged, distance_matrix, start_soc=1.0):
     remaining = trips.to_dict('records')
     schedule = build_schedule(remaining, dh, start_soc * Q)
     schedule['energy consumption'] = -schedule['energy consumption']
-    return schedule
+
+
+    return format_bus_plan(schedule) # return the bus plan in the original input format (hardcoded format)
+
+
+if __name__ == "__main__":
+
+    
+    from busplanner.calculations.main import merged as merge_route_plan
+
+    timetable = pd.read_excel(DATA / "Timetable.xlsx")   
+    distance_matrix = pd.read_excel(DATA / "DistanceMatrix.xlsx")
+
+    route_plan = merge_route_plan(timetable, distance_matrix)
+    schedule = optimise_schedule(route_plan, distance_matrix, start_soc=1.0)
+
+    print(schedule.head(20).to_string())
+    print(f"\nBuses used: {schedule['bus'].nunique()}, rows: {len(schedule)}")
+
+    schedule.to_excel(DATA / "Bus_Planning_improved.xlsx", index=False)
+    print("Saved to", DATA / "Bus_Planning_improved.xlsx")
+
 
 ### 
 
