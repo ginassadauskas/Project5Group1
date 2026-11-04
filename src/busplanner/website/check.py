@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 
-from busplanner.calculations.imports import normalize_schedule_values
 from busplanner.calculations.checker import main as checker
 from busplanner.calculations.checker.warning import correct_consumption
 from busplanner.calculations.defaults import REQ_COL
