@@ -50,6 +50,17 @@ def convert_time_to_minutes(time_column: pd.Series, threshold: int=MIDNIGHT) -> 
     minutes = temp.dt.hour * 60 + temp.dt.minute
     return _adjust_for_midnight(minutes, threshold)
 
+def cmh(minutes: int):
+    """Converts a single time into HH:MM
+    """
+    HH = str(int(minutes) // 60)
+    MM = str(int(minutes) % 60)
+    if len(HH) == 1:
+        HH = '0' + HH
+    if len(MM) == 1:
+        MM = '0' + MM
+    return f"{HH}:{MM}"
+
 def convert_minutes_to_time(time_column: pd.Series):
     """Converts a pd.Series from minutes back to time.
 

@@ -3,6 +3,7 @@
 import pandas as pd
 from busplanner.calculations.power import powerpertrip
 from busplanner.calculations import defaults as kwh
+from busplanner.calculations.imports import cmh
 
 def correct_consumption(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame):
     """Checks if the energy consumption matches the trip taken.
@@ -29,6 +30,8 @@ def correct_consumption(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame):
     bus_plan = pd.merge(bus_plan, distance_matrix, how='left', 
                         on=['start location', 'end location', 'line'])
 
+    bus_plan['duration'] = bus_plan['end time'] - bus_plan['start time']
+
     #Idle
     bus_plan['min battery'] = bus_plan['min battery'].where(
         (bus_plan['activity'] != 'idle'), bus_plan['duration'] * kwh.IDLE)
@@ -53,7 +56,7 @@ def correct_consumption(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame):
     fixed = bus_plan.copy()
     fixed['energy consumption'] = fixed['energy consumption'].where(
         ~fixed.isin(incorrect_power)['energy consumption'], #Leave all accepted values as is
-        (fixed['max battery'] + fixed['mix battery']) / 2 #Change incorrect values to the average of the accepted range.
+        (fixed['max battery'] + fixed['min battery']) / 2 #Change incorrect values to the average of the accepted range.
         )
 
     return warning_correct_consumption(incorrect_power), fixed
@@ -61,8 +64,8 @@ def correct_consumption(bus_plan: pd.DataFrame, distance_matrix: pd.DataFrame):
 def warning_correct_consumption(errorlines: pd.DataFrame):
     ers = []
 
-    for index, error in errorlines.iterrows():
-        ers.append(f'''The bus trip at row {index} has an incorrect consumption of {error['energy consumption']}. \n
+    for _, error in errorlines.iterrows():
+        ers.append(f'''The bus activity starting at {cmh(error['start time'])} has an incorrect consumption of {error['energy consumption']}. \n
                    Allowed range is between {error['min battery']} and {error['max battery']} and has been corrected to the average of the two.''')
 
     return ers
