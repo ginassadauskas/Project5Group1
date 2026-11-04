@@ -5,10 +5,6 @@ from busplanner.calculations.checker import main as checker
 from busplanner.calculations.checker.warning import correct_consumption
 from busplanner.calculations.defaults import REQ_COL
 
-def normalize_bus_schedule(df):
-    """Convert time-like columns to minute values before validation."""
-    return normalize_schedule_values(df)
-
 
 def load_data(uploaded_file):
     """Load an uploaded schedule from CSV or Excel."""
