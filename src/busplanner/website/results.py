@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 from matplotlib.patches import Patch
 
-from busplanner.calculations.grade.kpi import trip_ratio
+from busplanner.calculations.grade.kpi import kpi
 
 
 def _load_plot_gantt():
@@ -41,6 +41,19 @@ def results_display():
 
     df = st.session_state["optimized_df"]
 
+    req_bus_line = st.session_state.get("merged_schedule")
+    if req_bus_line is None:
+        req_bus_line = st.session_state.get("bus_schedule")
+
+    distance_matrix = st.session_state.get("distance_matrix")
+
+    kpi_score = None
+    if req_bus_line is not None and distance_matrix is not None:
+        try:
+            kpi_score = kpi(df, req_bus_line, distance_matrix)
+        except Exception as exc:
+            st.warning(f"KPI could not be calculated: {exc}")
+
     col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
@@ -68,12 +81,16 @@ def results_display():
         )
 
     with col5:
-        st.metric(
-            "Trip ratio",
-            f"{trip_ratio(df):.2f}"
-        )
+        if kpi_score is None:
+            st.metric("KPI score", "N/A")
+        else:
+            st.metric("KPI score", f"{kpi_score * 100:.2f}%")
 
     st.divider()
+
+    if kpi_score is not None:
+        st.subheader("KPI summary")
+        st.write(f"Overall KPI score: {kpi_score:.4f} / 1.00")
 
     st.subheader("Activities")
 
@@ -119,6 +136,3 @@ def results_display():
         file_name="optimized_schedule.csv",
         mime="text/csv"
     )
-
-
-results_display()

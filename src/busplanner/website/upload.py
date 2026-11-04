@@ -41,6 +41,9 @@ def upload_display():
         distance_matrix = load_data(distance_matrix_file)
         time_table = load_data(time_table_file)
 
+        st.session_state["distance_matrix"] = distance_matrix
+        st.session_state["time_table"] = time_table
+
         merged_schedule = merged(time_table, distance_matrix)
 
         st.session_state["merged_schedule"] = merged_schedule
@@ -61,7 +64,7 @@ def upload_display():
 
         st.write("Merged preview")
         st.dataframe(
-            merged_schedule.head(20),
+            merged_schedule,
             use_container_width=True
         )
     elif distance_matrix_file is not None or time_table_file is not None:

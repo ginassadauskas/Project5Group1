@@ -29,6 +29,3 @@ def comparison_display():
 
     st.session_state["cleaned_df"] = cleaned_df
 
-
-comparison_display()
-

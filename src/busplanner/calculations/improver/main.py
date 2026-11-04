@@ -35,7 +35,7 @@ def prepare_trips(merged, distance_matrix):
     return trips.sort_values('departure_time').reset_index(drop=True)
 
 
-def load_deadhead(dm):
+def load_deadhead(dm): 
     """
     Load the deadhead travel time and energy consumption between all pairs of locations from the distance matrix.
 

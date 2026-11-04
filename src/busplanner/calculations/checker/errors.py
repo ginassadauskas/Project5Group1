@@ -195,4 +195,38 @@ def has_issue(result):
         return True
     return len(result) > 0
 
+def start_garage(bus_plan: pd.DataFrame) -> pd.DataFrame | bool:
+    '''
+    Checks if the first and last location of the whole schedule for each bus is the garage
+
+    Parameters:
+    ---------
+    bus_plan : pd.DataFrame
+        A pandas DataFrame containing the bus plan with columns for at least 'end location' 'start location' and 'bus'.
+
+    Returns:
+    ---------
+    garage_issues : pd.DataFrame
+        Each entry with a bus that has a starting or ending location not in an available garage.
+    '''
+    bus_plan.copy()
+    garage_issues = []  # pretty much same with the template 
+
+    for bus in bus_plan['bus'].unique():  # for every unique bus number
+        sorted_plan = bus_plan[bus_plan['bus'] == bus].sort_values(by='start time')
+        first_row = sorted_plan.iloc[0]
+        last_row = sorted_plan.iloc[-1]
+
+        if first_row['start location'] not in CHARGER:
+            garage_issues.append(first_row)
+            
+        if last_row['end location'] not in CHARGER:
+            garage_issues.append(last_row)
+
+    # verified against data from the first 3 buses 
+
+    if len(garage_issues) == 0:
+        return True
+    return pd.concat(garage_issues)
+
 print('checker: errors.py OK')
