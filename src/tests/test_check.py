@@ -2,7 +2,10 @@ import pandas as pd
 
 from busplanner.calculations.checker.errors import start_garage
 from busplanner.calculations.checker.imports import import_bus_plan
+from busplanner.calculations.grade.kpi import efficiency
+from busplanner.calculations.improver.gantt import plot_gantt
 from busplanner.website.check import get_bus_schedule_warnings
+from busplanner.website.results import _load_plot_gantt
 
 
 def test_accepts_excel_style_column_names_and_garage_aliases():
@@ -87,3 +90,32 @@ def test_returns_empty_warning_list_for_valid_schedule():
     )
 
     assert get_bus_schedule_warnings(df) == []
+
+
+def test_efficiency_accepts_legacy_energy_column_names():
+    schedule = pd.DataFrame({"energy consumption": [10.0, 10.0]})
+    merged = pd.DataFrame({"energy consumption": [20.0, 20.0]})
+
+    assert efficiency(schedule, merged) == 2.0
+
+
+def test_plot_gantt_accepts_hhmmss_string_times():
+    df = pd.DataFrame(
+        {
+            "bus": [1, 1],
+            "start time": ["00:00:00", "01:00:00"],
+            "end time": ["00:30:00", "01:45:00"],
+            "activity": ["idle", "service trip"],
+        }
+    )
+
+    fig = plot_gantt(df)
+
+    assert fig is not None
+    assert len(fig.axes) == 1
+
+
+def test_website_loader_exposes_time_converter_for_gantt():
+    plot_fn = _load_plot_gantt()
+
+    assert callable(plot_fn)

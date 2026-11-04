@@ -71,11 +71,34 @@ def bus_ratio(schedule: pd.DataFrame, req_bus_line: pd.DataFrame, distance_matri
      """
      return count_buses(schedule) / minimum_bus(req_bus_line, distance_matrix)
 
+def _resolve_energy_column(frame: pd.DataFrame):
+     for candidate in ("energy_consumption", "energy consumption", "energy"):
+         if candidate in frame.columns:
+             return candidate
+
+     normalized = {
+         str(column).strip().lower().replace(" ", "_"): column
+         for column in frame.columns
+     }
+
+     for candidate in ("energy_consumption", "energy_consumption", "energy", "consumption"):
+         if candidate in normalized:
+             return normalized[candidate]
+
+     return None
+
+
 def efficiency(schedule: pd.DataFrame, merged: pd.DataFrame):
      # clip sets all negative values to 0, removing capacity gained from charging.
      # Therefor, we onlly include (theoretical minimum) the energy consumed.
-     merged_energy = pd.to_numeric(merged['energy_consumption'], errors='coerce').fillna(0)
-     schedule_energy = pd.to_numeric(schedule['energy consumption'], errors='coerce').fillna(0)
+     merged_energy_col = _resolve_energy_column(merged)
+     schedule_energy_col = _resolve_energy_column(schedule)
+
+     if merged_energy_col is None or schedule_energy_col is None:
+         return 0.0
+
+     merged_energy = pd.to_numeric(merged[merged_energy_col], errors='coerce').fillna(0)
+     schedule_energy = pd.to_numeric(schedule[schedule_energy_col], errors='coerce').fillna(0)
 
      merged_total = merged_energy.clip(lower=0).sum()
      schedule_total = schedule_energy.clip(lower=0).sum()

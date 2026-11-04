@@ -8,6 +8,7 @@ import streamlit as st
 from matplotlib.patches import Patch
 
 from busplanner.calculations.grade.kpi import kpi
+from busplanner.calculations.imports import convert_time_to_minutes
 
 
 def _load_plot_gantt():
@@ -26,7 +27,11 @@ def _load_plot_gantt():
     if plot_func is None:
         raise ImportError("Could not find plot_gantt in gantt.py")
 
-    namespace = {"plt": plt, "Patch": Patch}
+    namespace = {
+        "plt": plt,
+        "Patch": Patch,
+        "convert_time_to_minutes": convert_time_to_minutes,
+    }
     exec(compile(ast.Module(body=[plot_func], type_ignores=[]), str(gantt_path), "exec"), namespace, namespace)
     return namespace["plot_gantt"]
 
@@ -129,13 +134,11 @@ def results_display():
         height=450
     )
 
-    excel_buffer = io.BytesIO()
-    df.to_excel(excel_buffer, index=False, engine="openpyxl")
-    excel_buffer.seek(0)
+    csv_file = df.to_csv(index=False)
 
     st.download_button(
         "Download optimized schedule",
-        data=excel_buffer.getvalue(),
+        data=csv_file,
         file_name="optimized_schedule.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mime="text/csv"
     )
